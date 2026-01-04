@@ -69,6 +69,10 @@ void loop() {
         if (row == 1 && col == 2) player_y--;
         if (row == 1 && col == 1) player_x--;
         if (row == 1 && col == 3) player_x++;
+
+        player_x = max(0, min(player_x, WIDTH-1));
+        player_y = max(0, min(player_y, HEIGHT-1));
+
         leds[XY(player_x,player_y)] = CRGB::Green;
         FastLED.show();
       }
