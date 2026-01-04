@@ -4,19 +4,19 @@
 #include <Wire.h>
 #include <FastLED.h>
 
-#define WIDTH     8
-#define HEIGHT    32
-#define NUM_LEDS  (WIDTH * HEIGHT)
+#define WIDTH 8
+#define HEIGHT 32
+#define NUM_LEDS (WIDTH * HEIGHT)
 
-#define DATA_PIN  9
-#define LED_TYPE  WS2812B
+#define DATA_PIN 9
+#define LED_TYPE WS2812B
 #define COLOR_ORDER GRB
 #define BRIGHTNESS 16
 
 #define MAX_POWER_MILLIAMPS 500
 #define LED_STRIP_VOLTAGE 5
 
-#define EVT_BUTTON  0x01
+#define EVT_BUTTON 0x01
 #define EVT_ENCODER 0x02
 
 CRGB leds[NUM_LEDS];
@@ -32,8 +32,8 @@ uint16_t XY(uint8_t x, uint8_t y) {
 }
 
 void setup() {
-  Serial.begin(9600); // pc
-  Serial1.begin(115200); // controller
+  Serial.begin(9600);     // pc
+  Serial1.begin(115200);  // controller
 
   FastLED.addLeds<LED_TYPE, DATA_PIN, COLOR_ORDER>(leds, NUM_LEDS);
   FastLED.setMaxPowerInVoltsAndMilliamps(LED_STRIP_VOLTAGE, MAX_POWER_MILLIAMPS);
@@ -45,11 +45,16 @@ void setup() {
   player_y = 0;
 }
 
-void loop() {
+struct Pos {
+  uint8_t x, y;
+};
 
+struct Pos piece;
+
+void processInputs(unsigned long now) {
   while (Serial1.available() >= 3) {
     uint8_t type = Serial1.read();
-    uint8_t id   = Serial1.read();
+    uint8_t id = Serial1.read();
     int8_t value = (int8_t)Serial1.read();
 
     if (type == EVT_BUTTON) {
@@ -64,16 +69,16 @@ void loop() {
       Serial.println(col);
 
       if (value) {
-        leds[XY(player_x,player_y)] = CRGB::Black;
+        leds[XY(player_x, player_y)] = CRGB::Black;
         if (row == 0 && col == 2) player_y++;
         if (row == 1 && col == 2) player_y--;
         if (row == 1 && col == 1) player_x--;
         if (row == 1 && col == 3) player_x++;
 
-        player_x = max(0, min(player_x, WIDTH-1));
-        player_y = max(0, min(player_y, HEIGHT-1));
+        player_x = max(0, min(player_x, WIDTH - 1));
+        player_y = max(0, min(player_y, HEIGHT - 1));
 
-        leds[XY(player_x,player_y)] = CRGB::Green;
+        leds[XY(player_x, player_y)] = CRGB::Green;
         FastLED.show();
       }
 
@@ -89,5 +94,9 @@ void loop() {
       Serial.println(type, HEX);
     }
   }
+}
 
+void loop() {
+  unsigned long now = millis();
+  processInputs(now);
 }
