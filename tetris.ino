@@ -1,3 +1,6 @@
+// 8x32 LED STRIP (DIN = Pin 9)
+// DIY Controller (UART Serial1 on RX1)
+
 #include <Wire.h>
 #include <FastLED.h>
 
@@ -59,6 +62,17 @@ void loop() {
       Serial.print(row);
       Serial.print(" C");
       Serial.println(col);
+
+      if (value) {
+        leds[XY(player_x,player_y)] = CRGB::Black;
+        if (row == 0 && col == 2) player_y++;
+        if (row == 1 && col == 2) player_y--;
+        if (row == 1 && col == 1) player_x--;
+        if (row == 1 && col == 3) player_x++;
+        leds[XY(player_x,player_y)] = CRGB::Green;
+        FastLED.show();
+      }
+
     }
 
     else if (type == EVT_ENCODER) {
