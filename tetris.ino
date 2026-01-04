@@ -19,12 +19,34 @@
 #define EVT_BUTTON 0x01
 #define EVT_ENCODER 0x02
 
-CRGB leds[NUM_LEDS];
+struct Pos {
+  uint8_t x, y;
+};
 
 int brightness = 32;
 unsigned long lastClockUpdate = 0;
 
-int player_x, player_y;
+Pos piece = {3, 31};
+
+CRGB leds[NUM_LEDS];
+
+CRGB piece_colors[] = {
+  CRGB::Black,
+  CRGB::Green,
+  CRGB::Red,
+  CRGB::Blue,
+};
+
+uint8_t board[WIDTH][HEIGHT];
+
+// [piece][rotation][y][x]
+uint8_t tetronimo[1][4][3][2] = {
+  {{
+     {0, 1},
+     {0, 1},
+     {1, 1},
+   }}
+};
 
 uint16_t XY(uint8_t x, uint8_t y) {
   if (x >= WIDTH || y >= HEIGHT) return 0;
@@ -41,17 +63,14 @@ void setup() {
   FastLED.clear();
   FastLED.show();
 
-  player_x = 0;
-  player_y = 0;
+  for (int x=0; x<WIDTH; x++) {
+    for (int y=0; y<WIDTH; y++) {
+      board[x][y] = 0;
+    }
+  }
 }
 
-struct Pos {
-  uint8_t x, y;
-};
-
-struct Pos piece;
-
-void processInputs(unsigned long now) {
+void handleInput(unsigned long now) {
   while (Serial1.available() >= 3) {
     uint8_t type = Serial1.read();
     uint8_t id = Serial1.read();
@@ -61,25 +80,25 @@ void processInputs(unsigned long now) {
       uint8_t row = id / 5;
       uint8_t col = id % 5;
 
-      Serial.print("BUTTON ");
-      Serial.print(value ? "PRESS  " : "RELEASE ");
-      Serial.print("R");
-      Serial.print(row);
-      Serial.print(" C");
-      Serial.println(col);
+      // Serial.print("BUTTON ");
+      // Serial.print(value ? "PRESS  " : "RELEASE ");
+      // Serial.print("R");
+      // Serial.print(row);
+      // Serial.print(" C");
+      // Serial.println(col);
 
       if (value) {
-        leds[XY(player_x, player_y)] = CRGB::Black;
-        if (row == 0 && col == 2) player_y++;
-        if (row == 1 && col == 2) player_y--;
-        if (row == 1 && col == 1) player_x--;
-        if (row == 1 && col == 3) player_x++;
-
-        player_x = max(0, min(player_x, WIDTH - 1));
-        player_y = max(0, min(player_y, HEIGHT - 1));
-
-        leds[XY(player_x, player_y)] = CRGB::Green;
-        FastLED.show();
+        // leds[XY(player_x, player_y)] = CRGB::Black;
+        // if (row == 0 && col == 2) player_y++;
+        // if (row == 1 && col == 2) player_y--;
+        if (row == 1 && col == 1) piece.x--;
+        if (row == 1 && col == 3) piece.x++;
+        //
+        // player_x = max(0, min(player_x, WIDTH - 1));
+        // player_y = max(0, min(player_y, HEIGHT - 1));
+        //
+        // leds[XY(player_x, player_y)] = CRGB::Green;
+        // FastLED.show();
       }
 
     }
@@ -96,7 +115,42 @@ void processInputs(unsigned long now) {
   }
 }
 
+unsigned long fallDelay = 1000;
+unsigned long lastFall = millis();
+
+void updateGameState(unsigned long now) {
+  // apply gravity
+  while (now - lastFall >= fallDelay) {
+    stepGravity();
+    lastFall += fallDelay;
+  }
+}
+
+void stepGravity() {
+  if (piece.y < 4)
+    return; // hit bottom
+
+  // wipe previous piece
+  board[piece.x][piece.y] = 0;
+
+  piece.y--;
+
+  // write new piece
+  board[piece.x][piece.y] = 1;
+}
+
+void renderFrame(unsigned long now) {
+  for (int y=0; y<HEIGHT; y++) {
+    for (int x=0; x<WIDTH; x++) {
+      leds[XY(x, y)] = piece_colors[board[x][y]];
+    }
+  }
+  FastLED.show();
+}
+
 void loop() {
   unsigned long now = millis();
-  processInputs(now);
+  handleInput(now);
+  updateGameState(now);
+  renderFrame(now);
 }
