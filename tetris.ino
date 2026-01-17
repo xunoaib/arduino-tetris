@@ -24,6 +24,7 @@ struct Piece {
 };
 
 Piece curPiece = {0, 3, 31, 0};
+uint8_t curColorId = 0;
 
 int brightness = 32;
 unsigned long lastClockUpdate = 0;
@@ -145,11 +146,19 @@ void writePiece(Piece p, uint8_t value) {
 }
 
 void stepGravity() {
-  if (curPiece.y < 4) return; // hit bottom
+  Piece newPiece = curPiece;
+  newPiece.y--;
 
-  writePiece(curPiece, 0); // wipe previous piece
-  curPiece.y--;
-  writePiece(curPiece, 1); // write new piece
+  // hit bottom
+  if (!pieceInBounds(newPiece)) {
+    curPiece.x = 4;
+    curPiece.y = 31;
+    curColorId = (curColorId == sizeof(piece_colors) / sizeof(piece_colors[0]) ? 0 : curColorId+1);
+  }
+
+  writePiece(curPiece, 0); // wipe old piece
+  writePiece(newPiece, piece_colors[curColorId + 1]); // write new piece
+  curPiece = newPiece;
 }
 
 void renderFrame(unsigned long now) {
