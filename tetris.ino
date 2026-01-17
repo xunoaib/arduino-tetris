@@ -162,11 +162,8 @@ void stepGravity() {
   newPiece.y--;
 
   // hit bottom
-  if (!pieceInBounds(newPiece)) {
-    Serial.println("oob");
-    curPiece.x = 0;
-    curPiece.y = 31;
-    curColorId = (curColorId == sizeof(piece_colors) / sizeof(piece_colors[0]) ? 1 : curColorId+1);
+  if (collides(newPiece) || !pieceInBounds(newPiece)) {
+    spawnNewPiece();
     return;
   }
 
@@ -180,6 +177,20 @@ void renderFrame(unsigned long now) {
     for (int x=0; x<WIDTH; x++)
       leds[XY(x, y)] = piece_colors[board[x][y]];
   FastLED.show();
+}
+
+void spawnNewPiece() {
+  Piece newPiece = {0, 0, 31, 0};
+  curPiece = newPiece;
+  curColorId = (curColorId == sizeof(piece_colors) / sizeof(piece_colors[0]) ? 1 : curColorId+1);
+}
+
+void error() {
+  board[WIDTH-1][0] = CRGB::Red;
+  renderFrame();
+  // for (int x=0; x<WIDTH, x++) {
+  //   board[x][0] = CRGB::Red;
+  // }
 }
 
 void loop() {
