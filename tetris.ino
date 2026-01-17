@@ -23,13 +23,13 @@ struct Piece {
   uint8_t id, x, y, rot;
 };
 
-Piece curPiece = {0, 3, 31, 0};
+Piece curPiece = {0, 0, 31, 0};
 uint8_t curColorId = 0;
 
 int brightness = 32;
 unsigned long lastClockUpdate = 0;
 
-unsigned long fallDelay = 100;
+unsigned long fallDelay = 1000;
 unsigned long lastFall = millis();
 
 uint8_t board[WIDTH][HEIGHT];
@@ -86,10 +86,12 @@ void handleInput(unsigned long now) {
       uint8_t row = id / 5;
       uint8_t col = id % 5;
       if (value) {
+        writePiece(curPiece, 0);
         // if (row == 0 && col == 2) player_y++;
         // if (row == 1 && col == 2) player_y--;
         if (row == 1 && col == 1) curPiece.x--;
         if (row == 1 && col == 3) curPiece.x++;
+        writePiece(curPiece, curColorId);
       }
     }
 
@@ -113,21 +115,21 @@ void updateGameState(unsigned long now) {
 }
 
 bool pieceInBounds(Piece p) {
-  for (int dx=0; dx<WIDTH; dx++)
-    for (int dy=0; dy<HEIGHT; dy++)
+  for (int dx=0; dx<PIECE_WIDTH; dx++)
+    for (int dy=0; dy<PIECE_HEIGHT; dy++)
       if (tetronimo[p.id][p.rot][dy][dx] == 1 && !inBounds(p.x + dx, p.y + dy)) 
         return false;
   return true;
 }
 
 bool inBounds(int x, int y) {
-  return x > 0 && x < WIDTH && y > 0 && y < HEIGHT;
+  return x >= 0 && x < WIDTH && y >= 0 && y < HEIGHT;
 }
 
 bool collides(Piece p) {
   // TODO: bounds check
-  for (int dx=0; dx<WIDTH; dx++)
-    for (int dy=0; dy<HEIGHT; dy++)
+  for (int dx=0; dx<PIECE_WIDTH; dx++)
+    for (int dy=0; dy<PIECE_HEIGHT; dy++)
       if (tetronimo[p.id][p.rot][dy][dx] == 1 && board[p.x+dx][p.y+dy] != 0)
         return true;
   return false;
@@ -135,8 +137,8 @@ bool collides(Piece p) {
 
 // writes the given value to spots on the board masked by the given piece at a location
 void writePiece(Piece p, uint8_t value) {
-  for (int dx=0; dx<WIDTH; dx++)
-    for (int dy=0; dy<HEIGHT; dy++)
+  for (int dx=0; dx<PIECE_WIDTH; dx++)
+    for (int dy=0; dy<PIECE_HEIGHT; dy++)
       if (tetronimo[p.id][p.rot][dy][dx] == 1) {
         int x = p.x + dx;
         int y = p.y + dy;
@@ -147,17 +149,22 @@ void writePiece(Piece p, uint8_t value) {
 
 void stepGravity() {
   Piece newPiece = curPiece;
+  Serial.print(newPiece.x);
+  Serial.print(' ');
+  Serial.println(newPiece.y);
   newPiece.y--;
 
   // hit bottom
   if (!pieceInBounds(newPiece)) {
-    curPiece.x = 4;
+    Serial.println("oob");
+    curPiece.x = 0;
     curPiece.y = 31;
-    curColorId = (curColorId == sizeof(piece_colors) / sizeof(piece_colors[0]) ? 0 : curColorId+1);
+    curColorId = (curColorId == sizeof(piece_colors) / sizeof(piece_colors[0]) ? 1 : curColorId+1);
+    return;
   }
 
   writePiece(curPiece, 0); // wipe old piece
-  writePiece(newPiece, piece_colors[curColorId + 1]); // write new piece
+  writePiece(newPiece, curColorId); // write new piece
   curPiece = newPiece;
 }
 
