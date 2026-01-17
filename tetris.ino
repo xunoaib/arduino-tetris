@@ -113,27 +113,21 @@ void updateGameState(unsigned long now) {
 }
 
 bool collides(int pieceId, int rot, int x, int y) {
-  for (int dx=0; dx<WIDTH; dx++) {
-    for (int dy=0; dy<HEIGHT; dy++) {
-      // TODO: bounds check
-      if (tetronimo[pieceId][rot][dy][dx] == 1 && board[x+dx][y+dy] != 0) {
+  // TODO: bounds check
+  for (int dx=0; dx<WIDTH; dx++)
+    for (int dy=0; dy<HEIGHT; dy++)
+      if (tetronimo[pieceId][rot][dy][dx] == 1 && board[x+dx][y+dy] != 0)
         return true;
-      }
-    }
-  }
   return false;
 }
 
 // writes the given value to spots on the board masked by the given piece at a location
 bool writePiece(Piece p, int value) {
-  for (int dx=0; dx<WIDTH; dx++) {
-    for (int dy=0; dy<HEIGHT; dy++) {
-      // TODO: bounds check
-      if (tetronimo[p.id][p.rot][dy][dx] == 1 && board[p.x+dx][p.y+dy] != 0) {
+  // TODO: bounds check
+  for (int dx=0; dx<WIDTH; dx++)
+    for (int dy=0; dy<HEIGHT; dy++)
+      if (tetronimo[p.id][p.rot][dy][dx] == 1 && board[p.x+dx][p.y+dy] != 0)
         return true;
-      }
-    }
-  }
   return false;
 }
 
