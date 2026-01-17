@@ -120,7 +120,7 @@ bool pieceInBounds(Piece p) {
 }
 
 bool inBounds(int x, int y) {
-  return nx > 0 && nx < WIDTH && ny > 0 && ny < HEIGHT;
+  return x > 0 && x < WIDTH && y > 0 && y < HEIGHT;
 }
 
 bool collides(Piece p) {
@@ -133,13 +133,15 @@ bool collides(Piece p) {
 }
 
 // writes the given value to spots on the board masked by the given piece at a location
-bool writePiece(Piece p, int value) {
-  // TODO: bounds check
+void writePiece(Piece p, uint8_t value) {
   for (int dx=0; dx<WIDTH; dx++)
     for (int dy=0; dy<HEIGHT; dy++)
-      if (tetronimo[p.id][p.rot][dy][dx] == 1)
-        return true;
-  return false;
+      if (tetronimo[p.id][p.rot][dy][dx] == 1) {
+        int x = p.x + dx;
+        int y = p.y + dy;
+        if (inBounds(x, y))
+          board[x][y] = value;
+      }
 }
 
 void stepGravity() {
