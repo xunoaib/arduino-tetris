@@ -19,6 +19,8 @@
 #define EVT_BUTTON 0x01
 #define EVT_ENCODER 0x02
 
+#define EMPTY 0
+
 struct Piece {
   uint8_t id, x, y, rot;
 };
@@ -72,7 +74,7 @@ void setup() {
 
   for (int x=0; x<WIDTH; x++) {
     for (int y=0; y<WIDTH; y++) {
-      board[x][y] = 0;
+      board[x][y] = EMPTY;
     }
   }
 }
@@ -87,7 +89,7 @@ void handleInput(unsigned long now) {
       uint8_t row = id / 5;
       uint8_t col = id % 5;
       if (value) {
-        writePiece(curPiece, 0);
+        writePiece(curPiece, EMPTY);
         // if (row == 0 && col == 2) player_y++;
         // if (row == 1 && col == 2) player_y--;
         if (row == 1 && col == 1) curPiece.x--;
@@ -134,7 +136,7 @@ bool collides(Piece p) {
         int x = p.x + dx;
         int y = p.y + dy;
         if (!inBounds(x, y)) return true;
-        if (board[x][y] != 0) return true;
+        if (board[x][y] != EMPTY) return true;
       }
     }
   return false;
@@ -168,7 +170,7 @@ void stepGravity() {
     return;
   }
 
-  writePiece(curPiece, 0); // wipe old piece
+  writePiece(curPiece, EMPTY); // wipe old piece
   writePiece(newPiece, curColorId); // write new piece
   curPiece = newPiece;
 }
