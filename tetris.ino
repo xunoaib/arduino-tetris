@@ -73,6 +73,10 @@ void setup() {
   FastLED.clear();
   FastLED.show();
 
+  clearBoard();
+}
+
+void clearBoard() {
   for (int x=0; x<WIDTH; x++) {
     for (int y=0; y<HEIGHT; y++) {
       board[x][y] = EMPTY;
@@ -94,7 +98,12 @@ void handleInput(unsigned long now) {
         // if (row == 0 && col == 2) player_y++;
         // if (row == 1 && col == 2) player_y--;
         if (row == 1 && col == 1) p.x--;
-        if (row == 1 && col == 3) p.x++;
+        else if (row == 1 && col == 3) p.x++;
+        else if (row == 1 && col == 4) {
+          resetGame();
+          return;
+        }
+        else { Serial.print(row); Serial.print(' '); Serial.println(col); }
 
         if (pieceInBounds(p))
           curPiece = p;
@@ -138,6 +147,19 @@ bool settled(Piece p) {
       if (tetronimo[p.id][p.rot][dy][dx] == 1) {
         int x = p.x + dx;
         int y = p.y - dy - 1;
+        if (!inBounds(x, y)) return true;
+        if (board[x][y] != EMPTY) return true;
+      }
+    }
+  return false;
+}
+
+bool collides(Piece p) {
+  for (int dx=0; dx<PIECE_WIDTH; dx++)
+    for (int dy=0; dy<PIECE_HEIGHT; dy++) {
+      if (tetronimo[p.id][p.rot][dy][dx] == 1) {
+        int x = p.x + dx;
+        int y = p.y - dy;
         if (!inBounds(x, y)) return true;
         if (board[x][y] != EMPTY) return true;
       }
@@ -200,6 +222,11 @@ void spawnNewPiece() {
   //   curColorId = 1;
 
   curColorId = 1;
+}
+
+void resetGame() {
+  spawnNewPiece();
+  clearBoard();
 }
 
 void loop() {
