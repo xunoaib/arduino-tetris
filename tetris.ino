@@ -147,8 +147,7 @@ bool settled(Piece p) {
       if (tetronimo[p.id][p.rot][dy][dx] == 1) {
         int x = p.x + dx;
         int y = p.y - dy - 1;
-        if (!inBounds(x, y)) return true;
-        if (board[x][y] != EMPTY) return true;
+        if (!inBounds(x, y) || board[x][y] != EMPTY) return true;
       }
     }
   return false;
@@ -160,8 +159,7 @@ bool collides(Piece p) {
       if (tetronimo[p.id][p.rot][dy][dx] == 1) {
         int x = p.x + dx;
         int y = p.y - dy;
-        if (!inBounds(x, y)) return true;
-        if (board[x][y] != EMPTY) return true;
+        if (!inBounds(x, y) || board[x][y] != EMPTY) return true;
       }
     }
   return false;
