@@ -19,14 +19,14 @@
 #define EVT_BUTTON 0x01
 #define EVT_ENCODER 0x02
 
-struct Pos {
-  uint8_t x, y;
+struct Piece {
+  uint8_t id, x, y, rot;
 };
+
+Piece curPiece = {0, 3, 31, 0};
 
 int brightness = 32;
 unsigned long lastClockUpdate = 0;
-
-Pos piece = {3, 31};
 
 CRGB leds[NUM_LEDS];
 
@@ -39,8 +39,11 @@ CRGB piece_colors[] = {
 
 uint8_t board[WIDTH][HEIGHT];
 
+#define PIECE_HEIGHT 3
+#define PIECE_WIDTH 2
+
 // [piece][rotation][y][x]
-uint8_t tetronimo[1][4][3][2] = {
+uint8_t tetronimo[1][4][PIECE_HEIGHT][PIECE_WIDTH] = {
   {{
      {0, 1},
      {0, 1},
@@ -91,8 +94,8 @@ void handleInput(unsigned long now) {
         // leds[XY(player_x, player_y)] = CRGB::Black;
         // if (row == 0 && col == 2) player_y++;
         // if (row == 1 && col == 2) player_y--;
-        if (row == 1 && col == 1) piece.x--;
-        if (row == 1 && col == 3) piece.x++;
+        if (row == 1 && col == 1) curPiece.x--;
+        if (row == 1 && col == 3) curPiece.x++;
         //
         // player_x = max(0, min(player_x, WIDTH - 1));
         // player_y = max(0, min(player_y, HEIGHT - 1));
@@ -115,28 +118,52 @@ void handleInput(unsigned long now) {
   }
 }
 
-unsigned long fallDelay = 1000;
+unsigned long fallDelay = 100;
 unsigned long lastFall = millis();
 
 void updateGameState(unsigned long now) {
-  // apply gravity
   while (now - lastFall >= fallDelay) {
     stepGravity();
     lastFall += fallDelay;
   }
 }
 
+bool collides(int pieceId, int rot, int x, int y) {
+  for (int dx=0; dx<WIDTH; dx++) {
+    for (int dy=0; dy<HEIGHT; dy++) {
+      // WARN: bounds check
+      if (tetronimo[pieceId][rot][dy][dx] == 1 && board[x+dx][y+dy] != 0) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+// writes the given value to spots on the board masked by the given piece at a location
+bool writeMaskedBoard(int pieceId, int rot, int x, int y, int value) {
+  for (int dx=0; dx<WIDTH; dx++) {
+    for (int dy=0; dy<HEIGHT; dy++) {
+      // WARN: bounds check
+      if (tetronimo[pieceId][rot][dy][dx] == 1 && board[x+dx][y+dy] != 0) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
 void stepGravity() {
-  if (piece.y < 4)
+  if (curPiece.y < 4)
     return; // hit bottom
 
   // wipe previous piece
-  board[piece.x][piece.y] = 0;
+  board[curPiece.x][curPiece.y] = 0;
 
-  piece.y--;
+  curPiece.y--;
 
   // write new piece
-  board[piece.x][piece.y] = 1;
+  board[curPiece.x][curPiece.y] = 1;
 }
 
 void renderFrame(unsigned long now) {
