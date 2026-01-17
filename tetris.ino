@@ -33,6 +33,7 @@ unsigned long fallDelay = 1000;
 unsigned long lastFall = millis();
 
 uint8_t board[WIDTH][HEIGHT];
+
 CRGB leds[NUM_LEDS];
 
 CRGB piece_colors[] = {
@@ -127,11 +128,15 @@ bool inBounds(int x, int y) {
 }
 
 bool collides(Piece p) {
-  // TODO: bounds check
   for (int dx=0; dx<PIECE_WIDTH; dx++)
-    for (int dy=0; dy<PIECE_HEIGHT; dy++)
-      if (tetronimo[p.id][p.rot][dy][dx] == 1 && board[p.x+dx][p.y+dy] != 0)
-        return true;
+    for (int dy=0; dy<PIECE_HEIGHT; dy++) {
+      if (tetronimo[p.id][p.rot][dy][dx] == 1) {
+        int x = p.x + dx;
+        int y = p.y + dy;
+        if (!inBounds(x, y)) return true;
+        if (board[x][y] != 0) return true;
+      }
+    }
   return false;
 }
 
