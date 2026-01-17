@@ -112,11 +112,23 @@ void updateGameState(unsigned long now) {
   }
 }
 
-bool collides(int pieceId, int rot, int x, int y) {
+bool inBounds(Piece p) {
+  for (int dx=0; dx<WIDTH; dx++)
+    for (int dy=0; dy<HEIGHT; dy++)
+      if (tetronimo[p.id][p.rot][dy][dx] == 1) {
+        int nx = p.x + dx;
+        int ny = p.y + dy;
+        if (nx < 0 or nx >= WIDTH) return false;
+        if (ny < 0 or ny >= HEIGHT) return false;
+      }
+  return true;
+}
+
+bool collides(Piece p) {
   // TODO: bounds check
   for (int dx=0; dx<WIDTH; dx++)
     for (int dy=0; dy<HEIGHT; dy++)
-      if (tetronimo[pieceId][rot][dy][dx] == 1 && board[x+dx][y+dy] != 0)
+      if (tetronimo[p.id][p.rot][dy][dx] == 1 && board[p.x+dx][p.y+dy] != 0)
         return true;
   return false;
 }
