@@ -125,11 +125,11 @@ bool collides(int pieceId, int rot, int x, int y) {
 }
 
 // writes the given value to spots on the board masked by the given piece at a location
-bool writePiece(int pieceId, int rot, int x, int y, int value) {
+bool writePiece(Piece p, int value) {
   for (int dx=0; dx<WIDTH; dx++) {
     for (int dy=0; dy<HEIGHT; dy++) {
       // TODO: bounds check
-      if (tetronimo[pieceId][rot][dy][dx] == 1 && board[x+dx][y+dy] != 0) {
+      if (tetronimo[p.id][p.rot][dy][dx] == 1 && board[p.x+dx][p.y+dy] != 0) {
         return true;
       }
     }
@@ -141,13 +141,9 @@ void stepGravity() {
   if (curPiece.y < 4)
     return; // hit bottom
 
-  // wipe previous piece
-  board[curPiece.x][curPiece.y] = 0;
-
+  writePiece(curPiece, 0); // wipe previous piece
   curPiece.y--;
-
-  // write new piece
-  board[curPiece.x][curPiece.y] = 1;
+  writePiece(curPiece, 1); // write new piece
 }
 
 void renderFrame(unsigned long now) {
