@@ -107,7 +107,7 @@ void handleInput(unsigned long now) {
         }
         else { Serial.print(row); Serial.print(' '); Serial.println(col); }
 
-        if (pieceInBounds(p))
+        if (pieceInBounds(p) && !collides(p))
           curPiece = p;
       }
     }
