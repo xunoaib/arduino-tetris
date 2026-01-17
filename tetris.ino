@@ -153,7 +153,8 @@ bool settled(Piece p) {
       if (tetronimo[p.id][p.rot][dy][dx] == 1) {
         int x = p.x + dx;
         int y = p.y - dy - 1;
-        if (!inPlayfield(x, y) || board[x][y] != EMPTY) return true;
+        if (!inPlayfield(x, y)) return true;
+        if (y < HEIGHT && board[x][y] != EMPTY) return true;
       }
     }
   return false;
