@@ -4,9 +4,12 @@
 #include <Wire.h>
 #include <FastLED.h>
 
-#define WIDTH 8
-#define HEIGHT 32
-#define NUM_LEDS (WIDTH * HEIGHT)
+#define LED_WIDTH 8
+#define LED_HEIGHT 32
+#define NUM_LEDS (LED_WIDTH * LED_HEIGHT)
+
+#define WIDTH LED_WIDTH
+#define HEIGHT LED_HEIGHT + 10
 
 #define DATA_PIN 9
 #define LED_TYPE WS2812B
@@ -22,11 +25,12 @@
 #define EMPTY 0
 
 struct Piece {
-  uint8_t id, x, y, rot;
+  uint8_t id, rot;
+  int8_t x, y;
 };
 
-Piece curPiece = {0, 0, 31, 0};
-uint8_t curColorId = 0;
+Piece curPiece = {0, 0, 0, 31};
+uint8_t curColorId = 1;
 
 int brightness = 32;
 unsigned long lastClockUpdate = 0;
@@ -73,7 +77,7 @@ void setup() {
   FastLED.show();
 
   for (int x=0; x<WIDTH; x++) {
-    for (int y=0; y<WIDTH; y++) {
+    for (int y=0; y<HEIGHT; y++) {
       board[x][y] = EMPTY;
     }
   }
@@ -89,12 +93,14 @@ void handleInput(unsigned long now) {
       uint8_t row = id / 5;
       uint8_t col = id % 5;
       if (value) {
-        writePiece(curPiece, EMPTY);
+        Piece p = curPiece;
         // if (row == 0 && col == 2) player_y++;
         // if (row == 1 && col == 2) player_y--;
-        if (row == 1 && col == 1) curPiece.x--;
-        if (row == 1 && col == 3) curPiece.x++;
-        writePiece(curPiece, curColorId);
+        if (row == 1 && col == 1) p.x--;
+        if (row == 1 && col == 3) p.x++;
+
+        if (pieceInBounds(p))
+          curPiece = p;
       }
     }
 
@@ -126,15 +132,15 @@ bool pieceInBounds(Piece p) {
 }
 
 bool inBounds(int x, int y) {
-  return x >= 0 && x < WIDTH && y >= 0 && y < HEIGHT;
+  return x >= 0 && x < WIDTH && y >= 0; // && y < HEIGHT;
 }
 
-bool collides(Piece p) {
+bool settled(Piece p) {
   for (int dx=0; dx<PIECE_WIDTH; dx++)
     for (int dy=0; dy<PIECE_HEIGHT; dy++) {
       if (tetronimo[p.id][p.rot][dy][dx] == 1) {
         int x = p.x + dx;
-        int y = p.y + dy;
+        int y = p.y + dy - 1;
         if (!inBounds(x, y)) return true;
         if (board[x][y] != EMPTY) return true;
       }
@@ -155,42 +161,47 @@ void writePiece(Piece p, uint8_t value) {
 }
 
 void stepGravity() {
-  Piece newPiece = curPiece;
-  Serial.print(newPiece.x);
+  Serial.print(curPiece.x);
   Serial.print(' ');
-  Serial.println(newPiece.y);
-  newPiece.y--;
+  Serial.println(curPiece.y);
 
   // hit bottom
-  if (collides(newPiece) || !pieceInBounds(newPiece)) {
+  if (settled(curPiece)) {
     spawnNewPiece();
     return;
   }
-
-  writePiece(curPiece, EMPTY); // wipe old piece
-  writePiece(newPiece, curColorId); // write new piece
-  curPiece = newPiece;
+  curPiece.y--;
 }
 
 void renderFrame(unsigned long now) {
-  for (int y=0; y<HEIGHT; y++)
-    for (int x=0; x<WIDTH; x++)
+  for (int y=0; y<LED_HEIGHT; y++)
+    for (int x=0; x<LED_WIDTH; x++)
       leds[XY(x, y)] = piece_colors[board[x][y]];
+
+  for (int dx=0; dx<PIECE_WIDTH; dx++)
+    for (int dy=0; dy<PIECE_HEIGHT; dy++)
+      if (tetronimo[curPiece.id][curPiece.rot][dy][dx] == 1) {
+        int x = curPiece.x + dx;
+        int y = curPiece.y + dy;
+        if (inBounds(x, y))
+          leds[XY(x, y)] = piece_colors[curColorId];
+      }
+
   FastLED.show();
 }
 
 void spawnNewPiece() {
-  Piece newPiece = {0, 0, 31, 0};
-  curPiece = newPiece;
-  curColorId = (curColorId == sizeof(piece_colors) / sizeof(piece_colors[0]) ? 1 : curColorId+1);
-}
+  Serial.println("Spawning new piece");
+  curPiece.x = 0;
+  curPiece.y = LED_HEIGHT-3;
+  curPiece.id = 0;
+  curPiece.rot = 0;
 
-void error() {
-  board[WIDTH-1][0] = CRGB::Red;
-  renderFrame();
-  // for (int x=0; x<WIDTH, x++) {
-  //   board[x][0] = CRGB::Red;
-  // }
+  // curColorId++;
+  // if (curColorId >= sizeof(piece_colors) / sizeof(piece_colors[0]))
+  //   curColorId = 1;
+
+  curColorId = 1;
 }
 
 void loop() {
