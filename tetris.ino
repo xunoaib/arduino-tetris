@@ -215,11 +215,9 @@ void spawnNewPiece() {
   curPiece.id = 0;
   curPiece.rot = 0;
 
-  // curColorId++;
-  // if (curColorId >= sizeof(piece_colors) / sizeof(piece_colors[0]))
-  //   curColorId = 1;
-
-  curColorId = 1;
+  curColorId++;
+  if (curColorId >= sizeof(piece_colors) / sizeof(piece_colors[0]))
+    curColorId = 1;
 }
 
 void resetGame() {
