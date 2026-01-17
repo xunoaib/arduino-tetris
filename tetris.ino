@@ -4,12 +4,9 @@
 #include <Wire.h>
 #include <FastLED.h>
 
-#define LED_WIDTH 8
-#define LED_HEIGHT 32
-#define NUM_LEDS (LED_WIDTH * LED_HEIGHT)
-
-#define WIDTH LED_WIDTH
-#define HEIGHT LED_HEIGHT + 10
+#define WIDTH 8
+#define HEIGHT 32
+#define NUM_LEDS (WIDTH * HEIGHT)
 
 #define DATA_PIN 9
 #define LED_TYPE WS2812B
@@ -35,7 +32,7 @@ uint8_t curColorId = 1;
 int brightness = 32;
 unsigned long lastClockUpdate = 0;
 
-unsigned long fallDelay = 1000;
+unsigned long fallDelay = 100;
 unsigned long lastFall = millis();
 
 uint8_t board[WIDTH][HEIGHT];
@@ -126,7 +123,7 @@ void updateGameState(unsigned long now) {
 bool pieceInBounds(Piece p) {
   for (int dx=0; dx<PIECE_WIDTH; dx++)
     for (int dy=0; dy<PIECE_HEIGHT; dy++)
-      if (tetronimo[p.id][p.rot][dy][dx] == 1 && !inBounds(p.x + dx, p.y + dy)) 
+      if (tetronimo[p.id][p.rot][dy][dx] == 1 && !inBounds(p.x + dx, p.y - dy)) 
         return false;
   return true;
 }
@@ -140,7 +137,7 @@ bool settled(Piece p) {
     for (int dy=0; dy<PIECE_HEIGHT; dy++) {
       if (tetronimo[p.id][p.rot][dy][dx] == 1) {
         int x = p.x + dx;
-        int y = p.y + dy - 1;
+        int y = p.y - dy - 1;
         if (!inBounds(x, y)) return true;
         if (board[x][y] != EMPTY) return true;
       }
@@ -154,7 +151,7 @@ void writePiece(Piece p, uint8_t value) {
     for (int dy=0; dy<PIECE_HEIGHT; dy++)
       if (tetronimo[p.id][p.rot][dy][dx] == 1) {
         int x = p.x + dx;
-        int y = p.y + dy;
+        int y = p.y - dy;
         if (inBounds(x, y))
           board[x][y] = value;
       }
@@ -167,6 +164,7 @@ void stepGravity() {
 
   // hit bottom
   if (settled(curPiece)) {
+    writePiece(curPiece, curColorId);
     spawnNewPiece();
     return;
   }
@@ -174,15 +172,15 @@ void stepGravity() {
 }
 
 void renderFrame(unsigned long now) {
-  for (int y=0; y<LED_HEIGHT; y++)
-    for (int x=0; x<LED_WIDTH; x++)
+  for (int y=0; y<HEIGHT; y++)
+    for (int x=0; x<WIDTH; x++)
       leds[XY(x, y)] = piece_colors[board[x][y]];
 
   for (int dx=0; dx<PIECE_WIDTH; dx++)
     for (int dy=0; dy<PIECE_HEIGHT; dy++)
       if (tetronimo[curPiece.id][curPiece.rot][dy][dx] == 1) {
         int x = curPiece.x + dx;
-        int y = curPiece.y + dy;
+        int y = curPiece.y - dy;
         if (inBounds(x, y))
           leds[XY(x, y)] = piece_colors[curColorId];
       }
@@ -193,7 +191,7 @@ void renderFrame(unsigned long now) {
 void spawnNewPiece() {
   Serial.println("Spawning new piece");
   curPiece.x = 0;
-  curPiece.y = LED_HEIGHT-3;
+  curPiece.y = HEIGHT;
   curPiece.id = 0;
   curPiece.rot = 0;
 
