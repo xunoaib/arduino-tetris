@@ -186,11 +186,6 @@ void writePiece(Piece p, uint8_t value) {
 }
 
 void stepGravity() {
-  Serial.print(curPiece.x);
-  Serial.print(' ');
-  Serial.println(curPiece.y);
-
-  // hit bottom
   if (settled(curPiece)) {
     writePiece(curPiece, curColorId);
     spawnNewPiece();
@@ -217,7 +212,6 @@ void renderFrame(unsigned long now) {
 }
 
 void spawnNewPiece() {
-  Serial.println("Spawning new piece");
   curPiece.x = 0;
   curPiece.y = HEIGHT+4;
   curPiece.id = 0;
