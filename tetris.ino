@@ -218,7 +218,7 @@ void renderFrame(unsigned long now) {
 void spawnNewPiece() {
   Serial.println("Spawning new piece");
   curPiece.x = 0;
-  curPiece.y = HEIGHT;
+  curPiece.y = HEIGHT+4;
   curPiece.id = 0;
   curPiece.rot = 0;
 
