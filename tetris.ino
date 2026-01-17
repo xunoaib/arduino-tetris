@@ -52,7 +52,6 @@ CRGB piece_colors[] = {
 #define PIECE_HEIGHT 3
 #define PIECE_WIDTH 2
 
-// [piece][rotation][y][x]
 uint8_t tetronimo[1][4][PIECE_HEIGHT][PIECE_WIDTH] = {
   {{
      {0, 1},
@@ -135,13 +134,17 @@ void updateGameState(unsigned long now) {
 bool pieceInBounds(Piece p) {
   for (int dx=0; dx<PIECE_WIDTH; dx++)
     for (int dy=0; dy<PIECE_HEIGHT; dy++)
-      if (tetronimo[p.id][p.rot][dy][dx] == 1 && !inBounds(p.x + dx, p.y - dy)) 
+      if (tetronimo[p.id][p.rot][dy][dx] == 1 && !inPlayfield(p.x + dx, p.y - dy)) 
         return false;
   return true;
 }
 
-bool inBounds(int x, int y) {
-  return x >= 0 && x < WIDTH && y >= 0; // && y < HEIGHT;
+bool inPlayfield(int x, int y) {
+  return x >= 0 && x < WIDTH && y >= 0; // no y < HEIGHT check
+}
+
+inline bool inBoard(int x, int y) {
+  return x >= 0 && x < WIDTH && y >= 0 && y < HEIGHT;
 }
 
 bool settled(Piece p) {
@@ -150,7 +153,7 @@ bool settled(Piece p) {
       if (tetronimo[p.id][p.rot][dy][dx] == 1) {
         int x = p.x + dx;
         int y = p.y - dy - 1;
-        if (!inBounds(x, y) || board[x][y] != EMPTY) return true;
+        if (!inPlayfield(x, y) || board[x][y] != EMPTY) return true;
       }
     }
   return false;
@@ -162,7 +165,8 @@ bool collides(Piece p) {
       if (tetronimo[p.id][p.rot][dy][dx] == 1) {
         int x = p.x + dx;
         int y = p.y - dy;
-        if (!inBounds(x, y) || board[x][y] != EMPTY) return true;
+        if (!inPlayfield(x, y)) return true;
+        if (y < HEIGHT && board[x][y] != EMPTY) return true;
       }
     }
   return false;
@@ -175,7 +179,7 @@ void writePiece(Piece p, uint8_t value) {
       if (tetronimo[p.id][p.rot][dy][dx] == 1) {
         int x = p.x + dx;
         int y = p.y - dy;
-        if (inBounds(x, y))
+        if (inBoard(x, y))
           board[x][y] = value;
       }
 }
@@ -204,7 +208,7 @@ void renderFrame(unsigned long now) {
       if (tetronimo[curPiece.id][curPiece.rot][dy][dx] == 1) {
         int x = curPiece.x + dx;
         int y = curPiece.y - dy;
-        if (inBounds(x, y))
+        if (inBoard(x, y))
           leds[XY(x, y)] = piece_colors[curColorId];
       }
 
