@@ -28,6 +28,9 @@ Piece curPiece = {0, 3, 31, 0};
 int brightness = 32;
 unsigned long lastClockUpdate = 0;
 
+unsigned long fallDelay = 100;
+unsigned long lastFall = millis();
+
 CRGB leds[NUM_LEDS];
 
 CRGB piece_colors[] = {
@@ -82,28 +85,12 @@ void handleInput(unsigned long now) {
     if (type == EVT_BUTTON) {
       uint8_t row = id / 5;
       uint8_t col = id % 5;
-
-      // Serial.print("BUTTON ");
-      // Serial.print(value ? "PRESS  " : "RELEASE ");
-      // Serial.print("R");
-      // Serial.print(row);
-      // Serial.print(" C");
-      // Serial.println(col);
-
       if (value) {
-        // leds[XY(player_x, player_y)] = CRGB::Black;
         // if (row == 0 && col == 2) player_y++;
         // if (row == 1 && col == 2) player_y--;
         if (row == 1 && col == 1) curPiece.x--;
         if (row == 1 && col == 3) curPiece.x++;
-        //
-        // player_x = max(0, min(player_x, WIDTH - 1));
-        // player_y = max(0, min(player_y, HEIGHT - 1));
-        //
-        // leds[XY(player_x, player_y)] = CRGB::Green;
-        // FastLED.show();
       }
-
     }
 
     else if (type == EVT_ENCODER) {
@@ -118,9 +105,6 @@ void handleInput(unsigned long now) {
   }
 }
 
-unsigned long fallDelay = 100;
-unsigned long lastFall = millis();
-
 void updateGameState(unsigned long now) {
   while (now - lastFall >= fallDelay) {
     stepGravity();
@@ -131,7 +115,7 @@ void updateGameState(unsigned long now) {
 bool collides(int pieceId, int rot, int x, int y) {
   for (int dx=0; dx<WIDTH; dx++) {
     for (int dy=0; dy<HEIGHT; dy++) {
-      // WARN: bounds check
+      // TODO: bounds check
       if (tetronimo[pieceId][rot][dy][dx] == 1 && board[x+dx][y+dy] != 0) {
         return true;
       }
@@ -141,10 +125,10 @@ bool collides(int pieceId, int rot, int x, int y) {
 }
 
 // writes the given value to spots on the board masked by the given piece at a location
-bool writeMaskedBoard(int pieceId, int rot, int x, int y, int value) {
+bool writePiece(int pieceId, int rot, int x, int y, int value) {
   for (int dx=0; dx<WIDTH; dx++) {
     for (int dy=0; dy<HEIGHT; dy++) {
-      // WARN: bounds check
+      // TODO: bounds check
       if (tetronimo[pieceId][rot][dy][dx] == 1 && board[x+dx][y+dy] != 0) {
         return true;
       }
