@@ -31,6 +31,7 @@ unsigned long lastClockUpdate = 0;
 unsigned long fallDelay = 100;
 unsigned long lastFall = millis();
 
+uint8_t board[WIDTH][HEIGHT];
 CRGB leds[NUM_LEDS];
 
 CRGB piece_colors[] = {
@@ -39,8 +40,6 @@ CRGB piece_colors[] = {
   CRGB::Red,
   CRGB::Blue,
 };
-
-uint8_t board[WIDTH][HEIGHT];
 
 #define PIECE_HEIGHT 3
 #define PIECE_WIDTH 2
@@ -112,16 +111,16 @@ void updateGameState(unsigned long now) {
   }
 }
 
-bool inBounds(Piece p) {
+bool pieceInBounds(Piece p) {
   for (int dx=0; dx<WIDTH; dx++)
     for (int dy=0; dy<HEIGHT; dy++)
-      if (tetronimo[p.id][p.rot][dy][dx] == 1) {
-        int nx = p.x + dx;
-        int ny = p.y + dy;
-        if (nx < 0 or nx >= WIDTH) return false;
-        if (ny < 0 or ny >= HEIGHT) return false;
-      }
+      if (tetronimo[p.id][p.rot][dy][dx] == 1 && !inBounds(p.x + dx, p.y + dy)) 
+        return false;
   return true;
+}
+
+bool inBounds(int x, int y) {
+  return nx > 0 && nx < WIDTH && ny > 0 && ny < HEIGHT;
 }
 
 bool collides(Piece p) {
@@ -138,14 +137,13 @@ bool writePiece(Piece p, int value) {
   // TODO: bounds check
   for (int dx=0; dx<WIDTH; dx++)
     for (int dy=0; dy<HEIGHT; dy++)
-      if (tetronimo[p.id][p.rot][dy][dx] == 1 && board[p.x+dx][p.y+dy] != 0)
+      if (tetronimo[p.id][p.rot][dy][dx] == 1)
         return true;
   return false;
 }
 
 void stepGravity() {
-  if (curPiece.y < 4)
-    return; // hit bottom
+  if (curPiece.y < 4) return; // hit bottom
 
   writePiece(curPiece, 0); // wipe previous piece
   curPiece.y--;
@@ -153,11 +151,9 @@ void stepGravity() {
 }
 
 void renderFrame(unsigned long now) {
-  for (int y=0; y<HEIGHT; y++) {
-    for (int x=0; x<WIDTH; x++) {
+  for (int y=0; y<HEIGHT; y++)
+    for (int x=0; x<WIDTH; x++)
       leds[XY(x, y)] = piece_colors[board[x][y]];
-    }
-  }
   FastLED.show();
 }
 
