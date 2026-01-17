@@ -11,7 +11,6 @@
 #define DATA_PIN 9
 #define LED_TYPE WS2812B
 #define COLOR_ORDER GRB
-#define BRIGHTNESS 16
 
 #define MAX_POWER_MILLIAMPS 500
 #define LED_STRIP_VOLTAGE 5
@@ -21,6 +20,8 @@
 
 #define EMPTY 0
 
+unsigned long brightness = 16;
+
 struct Piece {
   uint8_t id, rot;
   int8_t x, y;
@@ -29,7 +30,6 @@ struct Piece {
 Piece curPiece = {0, 0, 0, 31};
 uint8_t curColorId = 1;
 
-int brightness = 32;
 unsigned long lastClockUpdate = 0;
 
 unsigned long fallDelay = 100;
@@ -71,7 +71,7 @@ void setup() {
 
   FastLED.addLeds<LED_TYPE, DATA_PIN, COLOR_ORDER>(leds, NUM_LEDS);
   FastLED.setMaxPowerInVoltsAndMilliamps(LED_STRIP_VOLTAGE, MAX_POWER_MILLIAMPS);
-  FastLED.setBrightness(BRIGHTNESS);
+  FastLED.setBrightness(brightness);
   FastLED.clear();
   FastLED.show();
 
@@ -99,13 +99,23 @@ void handleInput(unsigned long now) {
         Piece p = curPiece;
         // if (row == 0 && col == 2) player_y++;
         // if (row == 1 && col == 2) player_y--;
-        if (row == 1 && col == 1) p.x--;
-        else if (row == 1 && col == 3) p.x++;
+        if (row == 1 && col == 1)
+          p.x--;
+        else if (row == 1 && col == 3)
+          p.x++;
         else if (row == 1 && col == 4) {
           resetGame();
           return;
         }
-        else { Serial.print(row); Serial.print(' '); Serial.println(col); }
+        else if (row == 0 && col == 4) {
+          brightness = brightness == 16 ? 8 : 16;
+          FastLED.setBrightness(brightness);
+        }
+        else {
+          Serial.print(row);
+          Serial.print(' ');
+          Serial.println(col);
+        }
 
         if (pieceInBounds(p) && !collides(p))
           curPiece = p;
