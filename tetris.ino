@@ -1,6 +1,8 @@
 // 8x32 LED STRIP (DIN = Pin 9)
 // DIY Controller (UART Serial1 on RX1)
 
+#define FASTLED_ALLOW_INTERRUPTS 1
+
 #include <Wire.h>
 #include <FastLED.h>
 
