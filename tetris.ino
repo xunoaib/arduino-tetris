@@ -44,6 +44,9 @@ CRGB piece_colors[] = {
   CRGB::Green,
   CRGB::Red,
   CRGB::Blue,
+  CRGB::Yellow,
+  CRGB::Magenta,
+  CRGB::Orange,
 };
 
 #define PIECE_HEIGHT 3
