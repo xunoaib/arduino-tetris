@@ -54,7 +54,8 @@ CRGB piece_colors[] = {
 #define PIECE_HEIGHT 4
 #define PIECE_WIDTH 4
 
-uint8_t tetronimo[1][4][PIECE_HEIGHT][PIECE_WIDTH] = {
+uint8_t tetronimo[2][4][PIECE_HEIGHT][PIECE_WIDTH] = {
+
   // L block
   {
     {
@@ -80,7 +81,31 @@ uint8_t tetronimo[1][4][PIECE_HEIGHT][PIECE_WIDTH] = {
     }
   },
 
-  //
+  // I block
+  {
+    {
+      {0, 1, 0, 0},
+      {0, 1, 0, 0},
+      {0, 1, 0, 0},
+      {0, 1, 0, 0},
+    }, {
+      {0, 0, 0, 0},
+      {0, 0, 0, 0},
+      {1, 1, 1, 1},
+      {0, 0, 0, 0},
+    }, {
+      {0, 1, 0, 0},
+      {0, 1, 0, 0},
+      {0, 1, 0, 0},
+      {0, 1, 0, 0},
+    }, {
+      {0, 0, 0, 0},
+      {0, 0, 0, 0},
+      {1, 1, 1, 1},
+      {0, 0, 0, 0},
+    }
+  },
+
 };
 
 uint16_t XY(uint8_t x, uint8_t y) {
@@ -252,7 +277,7 @@ void renderFrame(unsigned long now) {
 void spawnNewPiece() {
   curPiece.x = 0;
   curPiece.y = HEIGHT+4;
-  curPiece.id = 0;
+  curPiece.id = (curPiece.id + 1) % 2;
   curPiece.rot = 0;
 
   curColorId++;
