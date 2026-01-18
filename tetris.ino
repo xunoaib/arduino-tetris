@@ -48,18 +48,32 @@ CRGB piece_colors[] = {
   CRGB::Blue,
   CRGB::Yellow,
   CRGB::Magenta,
-  CRGB::Orange,
+  // CRGB::Orange, // sucks
 };
 
 #define PIECE_HEIGHT 3
-#define PIECE_WIDTH 2
+#define PIECE_WIDTH 3
 
 uint8_t tetronimo[1][4][PIECE_HEIGHT][PIECE_WIDTH] = {
-  {{
-     {0, 1},
-     {0, 1},
-     {1, 1},
-   }}
+  {
+    {
+      {0, 1, 0},
+      {0, 1, 0},
+      {1, 1, 0},
+    }, {
+      {0, 0, 0},
+      {1, 0, 0},
+      {1, 1, 1},
+    }, {
+      {1, 1, 0},
+      {1, 0, 0},
+      {1, 0, 0},
+    }, {
+      {0, 0, 0},
+      {1, 1, 1},
+      {0, 0, 1},
+    }
+  }
 };
 
 uint16_t XY(uint8_t x, uint8_t y) {
@@ -99,13 +113,18 @@ void handleInput(unsigned long now) {
       uint8_t col = id % 5;
       if (value) {
         Piece p = curPiece;
-        // if (row == 0 && col == 2) player_y++;
-        // if (row == 1 && col == 2) player_y--;
-        if (row == 1 && col == 1)
+        if (row == 0 && col == 3) {
+          p.rot = (p.rot + 1) % 4;
+        }
+        else if (row == 0 && col == 1) {
+          p.rot = (p.rot - 1) % 4;
+        }
+        else if (row == 1 && col == 1)
           p.x--;
         else if (row == 1 && col == 3)
           p.x++;
         else if (row == 1 && col == 4) {
+          Serial.println("Resetting");
           resetGame();
           return;
         }
