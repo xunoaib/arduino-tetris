@@ -134,8 +134,7 @@ uint8_t tetronimo[3][4][PIECE_HEIGHT][PIECE_WIDTH] = {
 };
 
 uint16_t XY(uint8_t x, uint8_t y) {
-  if (x >= WIDTH || y >= HEIGHT) return 0;
-  return (y % 2 == 0) ? y * WIDTH + x : y * WIDTH + (WIDTH - 1 - x);
+  return (y & 1) ? (y * WIDTH + (WIDTH - 1 - x)) : (y * WIDTH + x);
 }
 
 void setup() {
