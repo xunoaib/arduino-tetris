@@ -35,7 +35,7 @@ uint8_t curColorId = 1;
 unsigned long lastClockUpdate = 0;
 
 unsigned long fallDelay = 100;
-unsigned long lastFall = millis();
+unsigned long lastFall;
 
 uint8_t board[WIDTH][HEIGHT];
 
@@ -148,6 +148,7 @@ void setup() {
   FastLED.clear();
   FastLED.show();
 
+  lastFall = millis();
   clearBoard();
 }
 
