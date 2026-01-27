@@ -174,7 +174,7 @@ void handleInput(unsigned long now) {
           p.rot = (p.rot + 1) % 4;
         }
         else if (row == 0 && col == 1) {
-          p.rot = (p.rot - 1) % 4;
+          p.rot = (p.rot + 3) % 4;
         }
         else if (row == 1 && col == 1)
           p.x--;
