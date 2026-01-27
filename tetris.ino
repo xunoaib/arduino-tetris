@@ -285,6 +285,16 @@ void renderFrame(unsigned long now) {
           leds[XY(x, y)] = piece_colors[curColorId];
       }
 
+  Piece ghost = curPiece;
+  while (!settled(ghost)) ghost.y--;
+
+  for (int dx=0; dx<PIECE_WIDTH; dx++)
+    for (int dy=0; dy<PIECE_HEIGHT; dy++) {
+      int x = curPiece.x + dx;
+      int y = curPiece.y - dy;
+      leds[XY(x,y)] = piece_colors[curColorId].fadeLightBy(200);
+    }
+
   FastLED.show();
 }
 
