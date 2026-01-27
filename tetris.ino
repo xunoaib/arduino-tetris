@@ -235,31 +235,20 @@ inline bool inBoard(int x, int y) {
   return x >= 0 && x < WIDTH && y >= 0 && y < HEIGHT;
 }
 
-bool settled(Piece p) {
+bool collidesAt(Piece p, int dyOffset) {
   for (int dx=0; dx<PIECE_WIDTH; dx++)
     for (int dy=0; dy<PIECE_HEIGHT; dy++) {
       if (tetronimo[p.id][p.rot][dy][dx] == 1) {
         int x = p.x + dx;
-        int y = p.y - dy - 1;
+        int y = p.y - dy + dyOffset;
         if (!inPlayfield(x, y)) return true;
         if (y < HEIGHT && board[x][y] != EMPTY) return true;
       }
     }
   return false;
 }
-
-bool collides(Piece p) {
-  for (int dx=0; dx<PIECE_WIDTH; dx++)
-    for (int dy=0; dy<PIECE_HEIGHT; dy++) {
-      if (tetronimo[p.id][p.rot][dy][dx] == 1) {
-        int x = p.x + dx;
-        int y = p.y - dy;
-        if (!inPlayfield(x, y)) return true;
-        if (y < HEIGHT && board[x][y] != EMPTY) return true;
-      }
-    }
-  return false;
-}
+bool collides(Piece p) { return collidesAt(p, 0); }
+bool settled(Piece p) { return collidesAt(p, -1); }
 
 // writes the given value to spots on the board masked by the given piece at a location
 void writePiece(Piece p, uint8_t value) {
