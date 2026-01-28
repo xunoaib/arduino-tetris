@@ -235,6 +235,10 @@ inline bool inBoard(int x, int y) {
   return x >= 0 && x < WIDTH && y >= 0 && y < HEIGHT;
 }
 
+inline bool cellOccupied(int x, int y) {
+  return y < HEIGHT && board[x][y] != EMPTY;
+}
+
 bool collidesAt(Piece p, int dyOffset) {
   for (int dx=0; dx<PIECE_WIDTH; dx++)
     for (int dy=0; dy<PIECE_HEIGHT; dy++) {
@@ -242,7 +246,7 @@ bool collidesAt(Piece p, int dyOffset) {
         int x = p.x + dx;
         int y = p.y - dy + dyOffset;
         if (!inPlayfield(x, y)) return true;
-        if (y < HEIGHT && board[x][y] != EMPTY) return true;
+        if (cellOccupied(x, y)) return true;
       }
     }
   return false;
