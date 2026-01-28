@@ -282,7 +282,7 @@ void renderFrame(unsigned long now) {
 
   for (int dx=0; dx<PIECE_WIDTH; dx++)
     for (int dy=0; dy<PIECE_HEIGHT; dy++)
-      if (tetronimo[curPiece.id][curPiece.rot][dy][dx] == 1) {
+      if (tetronimo[curPiece.id][curPiece.rot][dy][dx]) {
         int x = curPiece.x + dx;
         int y = curPiece.y - dy;
         if (inBoard(x, y))
@@ -294,9 +294,13 @@ void renderFrame(unsigned long now) {
 
   for (int dx=0; dx<PIECE_WIDTH; dx++)
     for (int dy=0; dy<PIECE_HEIGHT; dy++) {
-      int x = curPiece.x + dx;
-      int y = curPiece.y - dy;
-      leds[XY(x,y)] = piece_colors[curColorId].fadeLightBy(200);
+      int x = ghost.x + dx;
+      int y = ghost.y - dy;
+      if (inBoard(x, y) && tetronimo[ghost.id][ghost.rot][dy][dx]) {
+        CRGB c = piece_colors[curColorId];
+        c.fadeLightBy(220);
+        leds[XY(x,y)] = c;
+      }
     }
 
   FastLED.show();
