@@ -266,9 +266,35 @@ void writePiece(Piece p, uint8_t value) {
       }
 }
 
+void clearFullLines() {
+  for (int y=0; y<HEIGHT; y++) {
+    bool full = true;
+    for (int x=0; x<WIDTH; x++) {
+      if (board[x][y] == EMPTY) {
+        full = false;
+        break;
+      }
+    }
+
+    if (full) {
+      // shift everything above down
+      for (int yy=y; yy<HEIGHT-1; yy++)
+        for (int x=0; x<WIDTH; x++)
+          board[x][yy] = board[x][yy+1];
+
+      // wipe top row
+      for (int x=0; x<WIDTH; x++)
+        board[x][HEIGHT-1] = EMPTY;
+
+      y--; // recheck same row after collapse
+    }
+  }
+}
+
 void stepGravity() {
   if (settled(curPiece)) {
     writePiece(curPiece, curColorId);
+    clearFullLines();
     spawnNewPiece();
     return;
   }
