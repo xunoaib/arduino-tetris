@@ -166,16 +166,28 @@ void handleInput(unsigned long now) {
     int8_t value = (int8_t)Serial1.read();
 
     if (type == EVT_BUTTON) {
+
       uint8_t row = id / 5;
       uint8_t col = id % 5;
       if (value) {
         Piece p = curPiece;
-        if (row == 0 && col == 3) {
+        if (row == 1 && col == 0) {
+          // hard drop
+          while (!collidesAt(curPiece, -1))
+            curPiece.y--;
+
+          // lock immediately
+          writePiece(curPiece, curColorId);
+          clearFullLines();
+          spawnNewPiece();
+
+          lastFall = now; // sync gravity timer
+          return;
+        }
+        else if (row == 0 && col == 3)
           p.rot = (p.rot + 1) % 4;
-        }
-        else if (row == 0 && col == 1) {
+        else if (row == 0 && col == 1)
           p.rot = (p.rot + 3) % 4;
-        }
         else if (row == 1 && col == 1)
           p.x--;
         else if (row == 1 && col == 3)
