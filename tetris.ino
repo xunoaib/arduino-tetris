@@ -29,7 +29,7 @@ NesController controller(
   PIN_NES_PULSE
 );
 
-unsigned long brightness = 16;
+long brightness = 16;
 
 struct Piece {
   uint8_t id, rot;
@@ -168,11 +168,28 @@ void clearBoard() {
 }
 
 void handleInput(unsigned long now) {
+  controller.update();
+
   Piece p = curPiece;
-  if (controller.justPressed(NesController::Down)) {
+  if (
+      controller.isHeld(NesController::Select) &&
+      controller.justPressed(NesController::Down)
+    ) {
+    brightness = max(brightness - 2, 1);
+    FastLED.setBrightness(brightness);
+  }
+
+  else if (
+      controller.isHeld(NesController::Select) &&
+      controller.justPressed(NesController::Up)
+    ) {
+    brightness = min(brightness + 2, 255);
+    FastLED.setBrightness(brightness);
+  }
+
+  else if (controller.justPressed(NesController::Down)) {
     // hard drop
-    while (!collidesAt(curPiece, -1))
-      curPiece.y--;
+    while (!collidesAt(curPiece, -1)) curPiece.y--;
 
     // lock immediately
     writePiece(curPiece, curColorId);
@@ -182,6 +199,7 @@ void handleInput(unsigned long now) {
     lastFall = now; // sync gravity timer
     return;
   }
+
   else if (controller.justPressed(NesController::A))
     p.rot = (p.rot + 1) % 4; // rotate left
   else if (controller.justPressed(NesController::B))
@@ -190,15 +208,15 @@ void handleInput(unsigned long now) {
     p.x--;
   else if (controller.justPressed(NesController::Right))
     p.x++;
-  else if (controller.isHeld(NesController::Start) && controller.isHeld(NesController::Select))
-    Serial.println("Resetting");
+  else if (
+      controller.isHeld(NesController::Start) &&
+      controller.isHeld(NesController::Select) &&
+      (controller.justPressed(NesController::Start) ||
+      controller.justPressed(NesController::Select))
+    ) {
     resetGame();
     return;
   }
-  // else if (row == 0 && col == 4) {
-  //   brightness = brightness == 16 ? 8 : 16;
-  //   FastLED.setBrightness(brightness);
-  // }
 
   // prevent piece from going out of bounds
   if (pieceInBounds(p) && !collides(p))
