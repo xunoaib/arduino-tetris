@@ -59,8 +59,8 @@ CRGB piece_colors[] = {
   // CRGB::Orange, // sucks
 };
 
-Piece curPiece = {random(0, sizeof(tetronimo) / sizeof(tetronimo[0])), 0, 0, 31};
-uint8_t curColorId = random(1, sizeof(piece_colors) / sizeof(piece_colors[0]));;
+Piece curPiece;
+uint8_t curColorId;
 
 constexpr uint16_t XY(uint8_t x, uint8_t y) {
   return (y & 1) ? (y * WIDTH + (WIDTH - 1 - x)) : (y * WIDTH + x);
@@ -78,6 +78,7 @@ void setup() {
   lastFall = millis();
   controller.begin();
   clearBoard();
+  spawnNewPiece();
 }
 
 void clearBoard() {
@@ -268,8 +269,8 @@ void renderFrame(unsigned long now) {
 }
 
 void spawnNewPiece() {
-  curPiece.x = 0;
-  curPiece.y = HEIGHT+4;
+  curPiece.x = (WIDTH - PIECE_WIDTH) / 2;
+  curPiece.y = HEIGHT + PIECE_HEIGHT;
   curPiece.id = random(0, sizeof(tetronimo) / sizeof(tetronimo[0]));
   curPiece.rot = 0;
   curColorId = random(1, sizeof(piece_colors) / sizeof(piece_colors[0]));
