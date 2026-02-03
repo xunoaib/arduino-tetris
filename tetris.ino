@@ -144,9 +144,9 @@ void handleInput(unsigned long now) {
 }
 
 void updateGameState(unsigned long now) {
-  while (now - lastFall >= fallDelay) {
+  if (now - lastFall >= fallDelay) {
+    lastFall = now;
     stepGravity();
-    lastFall += fallDelay;
   }
 }
 
