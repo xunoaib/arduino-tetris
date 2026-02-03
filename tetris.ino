@@ -1,6 +1,6 @@
 // 8x32 LED STRIP (DIN = Pin 9)
 
-#define FASTLED_ALLOW_INTERRUPTS 1
+#define FASTLED_ALLOW_INTERRUPTS 0
 
 #include <Wire.h>
 #include <FastLED.h>
@@ -313,19 +313,14 @@ void stepGravity() {
 }
 
 void renderFrame(unsigned long now) {
+  FastLED.clear();
+
+  // current board
   for (int y=0; y<HEIGHT; y++)
     for (int x=0; x<WIDTH; x++)
       leds[XY(x, y)] = piece_colors[board[x][y]];
 
-  for (int dx=0; dx<PIECE_WIDTH; dx++)
-    for (int dy=0; dy<PIECE_HEIGHT; dy++)
-      if (tetronimo[curPiece.id][curPiece.rot][dy][dx]) {
-        int x = curPiece.x + dx;
-        int y = curPiece.y - dy;
-        if (inBoard(x, y))
-          leds[XY(x, y)] = piece_colors[curColorId];
-      }
-
+  // ghost piece
   Piece ghost = curPiece;
   while (!settled(ghost)) ghost.y--;
 
@@ -335,10 +330,20 @@ void renderFrame(unsigned long now) {
       int y = ghost.y - dy;
       if (inBoard(x, y) && tetronimo[ghost.id][ghost.rot][dy][dx]) {
         CRGB c = piece_colors[curColorId];
-        c.fadeLightBy(220);
+        c.fadeLightBy(205);
         leds[XY(x,y)] = c;
       }
     }
+
+  // current piece
+  for (int dx=0; dx<PIECE_WIDTH; dx++)
+    for (int dy=0; dy<PIECE_HEIGHT; dy++)
+      if (tetronimo[curPiece.id][curPiece.rot][dy][dx]) {
+        int x = curPiece.x + dx;
+        int y = curPiece.y - dy;
+        if (inBoard(x, y))
+          leds[XY(x, y)] = piece_colors[curColorId];
+      }
 
   FastLED.show();
 }
