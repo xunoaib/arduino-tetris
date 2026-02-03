@@ -49,3 +49,5 @@ uint8_t NesController::readRaw() {
 
     return state;
 }
+
+// vi: ft=arduino

@@ -20,3 +20,5 @@ class NesController {
     uint8_t _current;
     uint8_t _previous;
 };
+
+// vi: ft=arduino
