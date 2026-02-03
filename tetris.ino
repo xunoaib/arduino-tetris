@@ -1,10 +1,10 @@
 // 8x32 LED STRIP (DIN = Pin 9)
-// DIY Controller (UART Serial1 on RX1)
 
 #define FASTLED_ALLOW_INTERRUPTS 1
 
 #include <Wire.h>
 #include <FastLED.h>
+#include "NesController.h"
 
 #define WIDTH 8
 #define HEIGHT 32
@@ -17,10 +17,17 @@
 #define MAX_POWER_MILLIAMPS 500
 #define LED_STRIP_VOLTAGE 5
 
-#define EVT_BUTTON 0x01
-#define EVT_ENCODER 0x02
-
 #define EMPTY 0
+
+constexpr uint8_t PIN_NES_DATA  = 6;
+constexpr uint8_t PIN_NES_LATCH = 7;
+constexpr uint8_t PIN_NES_PULSE = 8;
+
+NesController controller(
+  PIN_NES_DATA,
+  PIN_NES_LATCH,
+  PIN_NES_PULSE
+);
 
 unsigned long brightness = 16;
 
@@ -139,7 +146,6 @@ uint16_t XY(uint8_t x, uint8_t y) {
 
 void setup() {
   Serial.begin(9600);     // pc
-  Serial1.begin(115200);  // controller
 
   FastLED.addLeds<LED_TYPE, DATA_PIN, COLOR_ORDER>(leds, NUM_LEDS);
   FastLED.setMaxPowerInVoltsAndMilliamps(LED_STRIP_VOLTAGE, MAX_POWER_MILLIAMPS);
@@ -149,6 +155,8 @@ void setup() {
 
   lastFall = millis();
   clearBoard();
+
+  controller.begin();
 }
 
 void clearBoard() {
@@ -160,68 +168,41 @@ void clearBoard() {
 }
 
 void handleInput(unsigned long now) {
-  while (Serial1.available() >= 3) {
-    uint8_t type = Serial1.read();
-    uint8_t id = Serial1.read();
-    int8_t value = (int8_t)Serial1.read();
+  Piece p = curPiece;
+  if (controller.justPressed(NesController::Down)) {
+    // hard drop
+    while (!collidesAt(curPiece, -1))
+      curPiece.y--;
 
-    if (type == EVT_BUTTON) {
+    // lock immediately
+    writePiece(curPiece, curColorId);
+    clearFullLines();
+    spawnNewPiece();
 
-      uint8_t row = id / 5;
-      uint8_t col = id % 5;
-      if (value) {
-        Piece p = curPiece;
-        if (row == 1 && col == 0) {
-          // hard drop
-          while (!collidesAt(curPiece, -1))
-            curPiece.y--;
-
-          // lock immediately
-          writePiece(curPiece, curColorId);
-          clearFullLines();
-          spawnNewPiece();
-
-          lastFall = now; // sync gravity timer
-          return;
-        }
-        else if (row == 0 && col == 3)
-          p.rot = (p.rot + 1) % 4;
-        else if (row == 0 && col == 1)
-          p.rot = (p.rot + 3) % 4;
-        else if (row == 1 && col == 1)
-          p.x--;
-        else if (row == 1 && col == 3)
-          p.x++;
-        else if (row == 1 && col == 4) {
-          Serial.println("Resetting");
-          resetGame();
-          return;
-        }
-        else if (row == 0 && col == 4) {
-          brightness = brightness == 16 ? 8 : 16;
-          FastLED.setBrightness(brightness);
-        }
-        else {
-          Serial.print(row);
-          Serial.print(' ');
-          Serial.println(col);
-        }
-
-        if (pieceInBounds(p) && !collides(p))
-          curPiece = p;
-      }
-    }
-
-    else if (type == EVT_ENCODER) {
-      Serial.print("ENCODER delta=");
-      Serial.println(value);
-    }
-
-    else {
-      Serial.print("UNKNOWN EVT ");
-      Serial.println(type, HEX);
-    }
+    lastFall = now; // sync gravity timer
+    return;
   }
+  else if (controller.justPressed(NesController::A))
+    p.rot = (p.rot + 1) % 4; // rotate left
+  else if (controller.justPressed(NesController::B))
+    p.rot = (p.rot + 3) % 4; // rotate right
+  else if (controller.justPressed(NesController::Left))
+    p.x--;
+  else if (controller.justPressed(NesController::Right))
+    p.x++;
+  else if (controller.isHeld(NesController::Start) && controller.isHeld(NesController::Select))
+    Serial.println("Resetting");
+    resetGame();
+    return;
+  }
+  // else if (row == 0 && col == 4) {
+  //   brightness = brightness == 16 ? 8 : 16;
+  //   FastLED.setBrightness(brightness);
+  // }
+
+  // prevent piece from going out of bounds
+  if (pieceInBounds(p) && !collides(p))
+    curPiece = p;
 }
 
 void updateGameState(unsigned long now) {
