@@ -62,7 +62,7 @@ CRGB piece_colors[] = {
 Piece curPiece = {random(0, sizeof(tetronimo) / sizeof(tetronimo[0])), 0, 0, 31};
 uint8_t curColorId = random(1, sizeof(piece_colors) / sizeof(piece_colors[0]));;
 
-uint16_t XY(uint8_t x, uint8_t y) {
+constexpr uint16_t XY(uint8_t x, uint8_t y) {
   return (y & 1) ? (y * WIDTH + (WIDTH - 1 - x)) : (y * WIDTH + x);
 }
 
