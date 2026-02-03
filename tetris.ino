@@ -154,7 +154,7 @@ void updateGameState(unsigned long now) {
 bool pieceInBounds(Piece p) {
   for (int dx=0; dx<PIECE_WIDTH; dx++)
     for (int dy=0; dy<PIECE_HEIGHT; dy++)
-      if (tetronimo[p.id][p.rot][dy][dx] == 1 && !inPlayfield(p.x + dx, p.y - dy)) 
+      if (tetronimo[p.id][p.rot][dy][dx] && !inPlayfield(p.x + dx, p.y - dy)) 
         return false;
   return true;
 }
@@ -174,7 +174,7 @@ inline bool cellOccupied(int x, int y) {
 bool collidesAt(Piece p, int dyOffset) {
   for (int dx=0; dx<PIECE_WIDTH; dx++)
     for (int dy=0; dy<PIECE_HEIGHT; dy++) {
-      if (tetronimo[p.id][p.rot][dy][dx] == 1) {
+      if (tetronimo[p.id][p.rot][dy][dx]) {
         int x = p.x + dx;
         int y = p.y - dy + dyOffset;
         if (!inPlayfield(x, y)) return true;
@@ -190,7 +190,7 @@ bool settled(Piece p) { return collidesAt(p, -1); }
 void writePiece(Piece p, uint8_t value) {
   for (int dx=0; dx<PIECE_WIDTH; dx++)
     for (int dy=0; dy<PIECE_HEIGHT; dy++)
-      if (tetronimo[p.id][p.rot][dy][dx] == 1) {
+      if (tetronimo[p.id][p.rot][dy][dx]) {
         int x = p.x + dx;
         int y = p.y - dy;
         if (inBoard(x, y))
