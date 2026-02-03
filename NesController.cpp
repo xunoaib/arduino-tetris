@@ -35,6 +35,7 @@ uint8_t NesController::readRaw() {
     digitalWrite(_latchPin, HIGH);
     delayMicroseconds(12);
     digitalWrite(_latchPin, LOW);
+    delayMicroseconds(6); // wait to settle
 
     for (int i = 0; i < 8; i++) {
         if (!digitalRead(_dataPin))
