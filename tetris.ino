@@ -29,7 +29,7 @@ NesController controller(
   PIN_NES_PULSE
 );
 
-long brightness = 16;
+long brightness = 10;
 
 struct Piece {
   uint8_t id, rot;
