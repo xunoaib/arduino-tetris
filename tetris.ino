@@ -4,30 +4,35 @@
 #include <FastLED.h>
 #include "NesController.h"
 
-#define WIDTH 8
-#define HEIGHT 32
-#define NUM_LEDS (WIDTH * HEIGHT)
-
-#define PIN_LED_DATA 9
-#define LED_TYPE WS2812B
-#define COLOR_ORDER GRB
-
-#define MAX_POWER_MILLIAMPS 500
-#define LED_STRIP_VOLTAGE 5
-
-#define EMPTY 0
-
+// nes controller pins
 constexpr uint8_t PIN_NES_DATA  = 6;
 constexpr uint8_t PIN_NES_LATCH = 7;
 constexpr uint8_t PIN_NES_PULSE = 8;
+
+// led data pin
+#define PIN_LED_DATA 9
+
+// board dimensions
+#define WIDTH 8
+#define HEIGHT 32
+
+// led configuration
+#define LED_TYPE WS2812B
+#define COLOR_ORDER GRB
+#define NUM_LEDS (WIDTH * HEIGHT)
+
+// led power
+#define MAX_POWER_MILLIAMPS 500
+#define LED_STRIP_VOLTAGE 5
+
+// alias board value
+#define EMPTY 0
 
 NesController controller(
   PIN_NES_DATA,
   PIN_NES_LATCH,
   PIN_NES_PULSE
 );
-
-long brightness = 10;
 
 struct Piece {
   uint8_t id, rot;
@@ -38,6 +43,8 @@ Piece curPiece = {0, 0, 0, 31};
 uint8_t curColorId = 1;
 
 unsigned long lastClockUpdate = 0;
+
+long brightness = 10;
 
 unsigned long fallDelay = 100;
 unsigned long lastFall;
