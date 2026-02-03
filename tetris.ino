@@ -81,11 +81,9 @@ void setup() {
 }
 
 void clearBoard() {
-  for (int x=0; x<WIDTH; x++) {
-    for (int y=0; y<HEIGHT; y++) {
+  for (int x=0; x<WIDTH; x++)
+    for (int y=0; y<HEIGHT; y++)
       board[x][y] = EMPTY;
-    }
-  }
 }
 
 void handleInput(unsigned long now) {
