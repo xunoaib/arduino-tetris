@@ -1,5 +1,3 @@
-// 8x32 LED STRIP (DIN = Pin 9)
-
 #define FASTLED_ALLOW_INTERRUPTS 0
 
 #include <Wire.h>
@@ -10,7 +8,7 @@
 #define HEIGHT 32
 #define NUM_LEDS (WIDTH * HEIGHT)
 
-#define DATA_PIN 9
+#define PIN_LED_DATA 9
 #define LED_TYPE WS2812B
 #define COLOR_ORDER GRB
 
@@ -147,7 +145,7 @@ uint16_t XY(uint8_t x, uint8_t y) {
 void setup() {
   Serial.begin(9600);     // pc
 
-  FastLED.addLeds<LED_TYPE, DATA_PIN, COLOR_ORDER>(leds, NUM_LEDS);
+  FastLED.addLeds<LED_TYPE, PIN_LED_DATA, COLOR_ORDER>(leds, NUM_LEDS);
   FastLED.setMaxPowerInVoltsAndMilliamps(LED_STRIP_VOLTAGE, MAX_POWER_MILLIAMPS);
   FastLED.setBrightness(brightness);
   FastLED.clear();
