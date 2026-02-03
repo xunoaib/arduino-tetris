@@ -40,13 +40,8 @@ struct Piece {
   int8_t x, y;
 };
 
-Piece curPiece = {0, 0, 0, 31};
-uint8_t curColorId = 1;
-
-unsigned long lastClockUpdate = 0;
-
 long brightness = 10;
-
+unsigned long lastClockUpdate = 0;
 unsigned long fallDelay = 100;
 unsigned long lastFall;
 
@@ -64,12 +59,15 @@ CRGB piece_colors[] = {
   // CRGB::Orange, // sucks
 };
 
+Piece curPiece = {random(0, sizeof(tetronimo) / sizeof(tetronimo[0])), 0, 0, 31};
+uint8_t curColorId = random(1, sizeof(piece_colors) / sizeof(piece_colors[0]));;
+
 uint16_t XY(uint8_t x, uint8_t y) {
   return (y & 1) ? (y * WIDTH + (WIDTH - 1 - x)) : (y * WIDTH + x);
 }
 
 void setup() {
-  Serial.begin(9600);     // pc
+  Serial.begin(9600);
 
   FastLED.addLeds<LED_TYPE, PIN_LED_DATA, COLOR_ORDER>(leds, NUM_LEDS);
   FastLED.setMaxPowerInVoltsAndMilliamps(LED_STRIP_VOLTAGE, MAX_POWER_MILLIAMPS);
@@ -78,9 +76,8 @@ void setup() {
   FastLED.show();
 
   lastFall = millis();
-  clearBoard();
-
   controller.begin();
+  clearBoard();
 }
 
 void clearBoard() {
@@ -275,12 +272,9 @@ void renderFrame(unsigned long now) {
 void spawnNewPiece() {
   curPiece.x = 0;
   curPiece.y = HEIGHT+4;
-  curPiece.id = (curPiece.id + 1) % (sizeof(tetronimo) / sizeof(tetronimo[0]));
+  curPiece.id = random(0, sizeof(tetronimo) / sizeof(tetronimo[0]));
   curPiece.rot = 0;
-
-  curColorId++;
-  if (curColorId >= sizeof(piece_colors) / sizeof(piece_colors[0]))
-    curColorId = 1;
+  curColorId = random(1, sizeof(piece_colors) / sizeof(piece_colors[0]));
 }
 
 void resetGame() {
