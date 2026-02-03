@@ -167,7 +167,7 @@ inline bool inBoard(int x, int y) {
 }
 
 inline bool cellOccupied(int x, int y) {
-  return y < HEIGHT && board[x][y] != EMPTY;
+  return inBoard(x, y) && board[x][y] != EMPTY;
 }
 
 bool collidesAt(Piece p, int dyOffset) {
