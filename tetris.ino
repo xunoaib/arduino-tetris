@@ -92,17 +92,17 @@ void handleInput(unsigned long now) {
 
   Piece p = curPiece;
   if (
-      controller.isHeld(NesController::Select) &&
-      controller.justPressed(NesController::Down)
-    ) {
+    controller.isHeld(NesController::Select) &&
+    controller.justPressed(NesController::Down)
+  ) {
     brightness = max(brightness - 2, 1);
     FastLED.setBrightness(brightness);
   }
 
   else if (
-      controller.isHeld(NesController::Select) &&
-      controller.justPressed(NesController::Up)
-    ) {
+    controller.isHeld(NesController::Select) &&
+    controller.justPressed(NesController::Up)
+  ) {
     brightness = min(brightness + 2, 255);
     FastLED.setBrightness(brightness);
   }
@@ -134,9 +134,9 @@ void handleInput(unsigned long now) {
       (controller.justPressed(NesController::Start) ||
       controller.justPressed(NesController::Select))
     ) {
-    resetGame();
-    return;
-  }
+  resetGame();
+  return;
+}
 
   // prevent piece from going out of bounds
   if (pieceInBounds(p) && !collides(p))
