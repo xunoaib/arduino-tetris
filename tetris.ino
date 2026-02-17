@@ -42,7 +42,7 @@ struct Piece {
 
 long brightness = 10;
 unsigned long lastClockUpdate = 0;
-unsigned long fallDelay = 100;
+unsigned long fallDelay;
 unsigned long lastFall;
 bool paused = false;
 
@@ -82,8 +82,8 @@ void setup() {
 
   lastFall = millis();
   controller.begin();
-  clearBoard();
-  spawnNewPiece();
+
+  resetGame();
 }
 
 void clearBoard() {
@@ -246,7 +246,15 @@ void clearFullLines() {
     Serial.print(level);
     Serial.print(", Score: ");
     Serial.println(score);
+
+    updateFallDelay();
   }
+}
+
+
+void updateFallDelay() {
+  int l = min(level, 20);
+  fallDelay = max(800 - (l * 60), 100);
 }
 
 void stepGravity() {
@@ -306,6 +314,7 @@ void spawnNewPiece() {
 void resetGame() {
   spawnNewPiece();
   clearBoard();
+  updateFallDelay();
 }
 
 void loop() {
