@@ -120,8 +120,9 @@ void handleInput(unsigned long now) {
     } else if (controller.justPressed(NesController::Up)) {
       brightness = min(brightness + 2, 255);
       FastLED.setBrightness(brightness);
+    } else if (controller.justPressed(NesController::Start)) {
+      resetGame();
     }
-
     return;
   }
 
