@@ -29,6 +29,17 @@ constexpr uint8_t PIN_NES_PULSE = 8;
 // alias board value
 #define EMPTY 0
 
+struct Kick { int8_t dx, dy; };
+
+const Kick basicKicks[] = {
+  { 0,  0},
+  { 1,  0},
+  {-1,  0},
+  { 2,  0},
+  {-2,  0},
+  { 0,  1}, // from floor
+};
+
 NesController controller(
   PIN_NES_DATA,
   PIN_NES_LATCH,
@@ -132,9 +143,9 @@ void handleInput(unsigned long now) {
   }
 
   else if (controller.justPressed(NesController::A))
-    p.rot = (p.rot + 1) % 4; // rotate left
+    tryRotate(+1);
   else if (controller.justPressed(NesController::B))
-    p.rot = (p.rot + 3) % 4; // rotate right
+    tryRotate(-1);
   else if (controller.justPressed(NesController::Left))
     p.x--;
   else if (controller.justPressed(NesController::Right))
@@ -159,6 +170,24 @@ void updateGameState(unsigned long now) {
     lastFall = now;
     stepGravity();
   }
+}
+
+bool tryRotate(int8_t dir) {
+  Piece rotated = curPiece;
+  rotated.rot = (rotated.rot + dir + 4) % 4;
+
+  for (uint8_t i = 0; i < sizeof(basicKicks)/sizeof(basicKicks[0]); i++) {
+    Piece test = rotated;
+    test.x += basicKicks[i].dx;
+    test.y += basicKicks[i].dy;
+
+    if (pieceInBounds(test) && !collides(test)) {
+      curPiece = test;
+      return true;
+    }
+  }
+
+  return false;
 }
 
 bool pieceInBounds(Piece p) {
