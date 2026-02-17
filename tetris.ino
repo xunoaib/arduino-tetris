@@ -44,6 +44,7 @@ long brightness = 10;
 unsigned long lastClockUpdate = 0;
 unsigned long fallDelay = 100;
 unsigned long lastFall;
+bool paused = false;
 
 unsigned long level = 0;
 unsigned long score = 0;
@@ -94,24 +95,15 @@ void clearBoard() {
 void handleInput(unsigned long now) {
   controller.update();
 
+  if (controller.justPressed(NesController::Select)) {
+    paused = !paused;
+  } else if (paused) {
+    return;
+  }
+
   Piece p = curPiece;
-  if (
-    controller.isHeld(NesController::Select) &&
-    controller.justPressed(NesController::Down)
-  ) {
-    brightness = max(brightness - 2, 1);
-    FastLED.setBrightness(brightness);
-  }
 
-  else if (
-    controller.isHeld(NesController::Select) &&
-    controller.justPressed(NesController::Up)
-  ) {
-    brightness = min(brightness + 2, 255);
-    FastLED.setBrightness(brightness);
-  }
-
-  else if (controller.justPressed(NesController::Down)) {
+  if (controller.justPressed(NesController::Down)) {
     // hard drop
     while (!collidesAt(curPiece, -1)) curPiece.y--;
 
@@ -132,15 +124,10 @@ void handleInput(unsigned long now) {
     p.x--;
   else if (controller.justPressed(NesController::Right))
     p.x++;
-  else if (
-      controller.isHeld(NesController::Start) &&
-      controller.isHeld(NesController::Select) &&
-      (controller.justPressed(NesController::Start) ||
-      controller.justPressed(NesController::Select))
-    ) {
-  resetGame();
-  return;
-}
+  else if (controller.justPressed(NesController::Start)) {
+    resetGame();
+    return;
+  }
 
   // prevent piece from going out of bounds
   if (pieceInBounds(p) && !collides(p))
@@ -148,6 +135,11 @@ void handleInput(unsigned long now) {
 }
 
 void updateGameState(unsigned long now) {
+  if (paused) {
+    lastFall = now;
+    return;
+  }
+
   if (now - lastFall >= fallDelay) {
     lastFall = now;
     stepGravity();
