@@ -50,6 +50,12 @@ unsigned long level = 0;
 unsigned long score = 0;
 unsigned long lines_cleared = 0;
 
+const uint16_t levelSpeeds[] = {
+  470, 380, 300, 220, 130,
+  100, 80, 80, 70, 70, 60, 60,
+  50, 50, 40, 40
+};
+
 uint8_t board[WIDTH][HEIGHT];
 
 CRGB leds[NUM_LEDS];
@@ -253,8 +259,8 @@ void clearFullLines() {
 
 
 void updateFallDelay() {
-  int l = min(level, 20);
-  fallDelay = max(800 - (l * 60), 100);
+  uint8_t l = min(level, (int)(sizeof(levelSpeeds)/sizeof(levelSpeeds[0]) - 1));
+  fallDelay = levelSpeeds[l];
 }
 
 void stepGravity() {
