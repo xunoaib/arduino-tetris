@@ -98,6 +98,15 @@ void handleInput(unsigned long now) {
   if (controller.justPressed(NesController::Select)) {
     paused = !paused;
   } else if (paused) {
+
+    if (controller.justPressed(NesController::Down)) {
+      brightness = max(brightness - 2, 1);
+      FastLED.setBrightness(brightness);
+    } else if (controller.justPressed(NesController::Up)) {
+      brightness = min(brightness + 2, 255);
+      FastLED.setBrightness(brightness);
+    }
+
     return;
   }
 
