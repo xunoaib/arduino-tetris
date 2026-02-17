@@ -45,6 +45,10 @@ unsigned long lastClockUpdate = 0;
 unsigned long fallDelay = 100;
 unsigned long lastFall;
 
+unsigned long level = 0;
+unsigned long score = 0;
+unsigned long lines_cleared = 0;
+
 uint8_t board[WIDTH][HEIGHT];
 
 CRGB leds[NUM_LEDS];
@@ -198,6 +202,8 @@ void writePiece(Piece p, uint8_t value) {
 }
 
 void clearFullLines() {
+  int num_lines = 0;
+
   for (int y=0; y<HEIGHT; y++) {
     bool full = true;
     for (int x=0; x<WIDTH; x++) {
@@ -218,7 +224,27 @@ void clearFullLines() {
         board[x][HEIGHT-1] = EMPTY;
 
       y--; // recheck same row after collapse
+      num_lines++;
     }
+  }
+
+  // update score & level
+  if (num_lines) {
+    int base = 0;
+    switch (num_lines) {
+      case 1: base = 40; break;
+      case 2: base = 100; break;
+      case 3: base = 300; break;
+      case 4: base = 1200; break;
+    }
+    score += base * (level + 1);
+    lines_cleared += num_lines;
+    level = lines_cleared / 10;
+
+    Serial.print("Level ");
+    Serial.print(level);
+    Serial.print(", Score: ");
+    Serial.println(score);
   }
 }
 
