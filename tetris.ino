@@ -195,19 +195,26 @@ int detectFullLines(uint8_t outMask[HEIGHT]) {
 }
 
 void collapseClearedLines() {
-  for (int y=0; y<HEIGHT; y++) {
-    if (!animData[y]) continue;
+  for (int y = 0; y < HEIGHT; ) {
+    if (!animData[y]) { 
+      y++;
+      continue;
+    }
 
-    // shift everything above down
-    for (int yy=y; yy<HEIGHT-1; yy++)
-      for (int x=0; x<WIDTH; x++)
-        board[x][yy] = board[x][yy+1];
+    // shift board down at row y
+    for (int yy = y; yy < HEIGHT - 1; yy++)
+      for (int x = 0; x < WIDTH; x++)
+        board[x][yy] = board[x][yy + 1];
 
-    // wipe top row
-    for (int x=0; x<WIDTH; x++)
-      board[x][HEIGHT-1] = EMPTY;
+    for (int x = 0; x < WIDTH; x++)
+      board[x][HEIGHT - 1] = EMPTY;
 
-    y--; // recheck same row after collapse
+    // IMPORTANT: shift the anim mask the same way so we don't re-clear forever
+    for (int yy = y; yy < HEIGHT - 1; yy++)
+      animData[yy] = animData[yy + 1];
+    animData[HEIGHT - 1] = 0;
+
+    // do NOT increment y; re-check same y after shift
   }
 }
 
