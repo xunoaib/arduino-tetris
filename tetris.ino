@@ -192,7 +192,7 @@ bool tryRotate(int8_t dir) {
 bool pieceInBounds(Piece p) {
   for (int dx=0; dx<PIECE_WIDTH; dx++)
     for (int dy=0; dy<PIECE_HEIGHT; dy++)
-      if (tetronimo[p.id][p.rot][dy][dx] && !inPlayfield(p.x + dx, p.y - dy)) 
+      if (pgm_read_byte(&tetronimo[p.id][p.rot][dy][dx]) && !inPlayfield(p.x + dx, p.y - dy))
         return false;
   return true;
 }
@@ -212,7 +212,7 @@ inline bool cellOccupied(int x, int y) {
 bool collidesAt(Piece p, int dyOffset) {
   for (int dx=0; dx<PIECE_WIDTH; dx++)
     for (int dy=0; dy<PIECE_HEIGHT; dy++) {
-      if (tetronimo[p.id][p.rot][dy][dx]) {
+      if (pgm_read_byte(&tetronimo[p.id][p.rot][dy][dx])) {
         int x = p.x + dx;
         int y = p.y - dy + dyOffset;
         if (!inPlayfield(x, y)) return true;
@@ -228,7 +228,7 @@ bool settled(Piece p) { return collidesAt(p, -1); }
 void writePiece(Piece p, uint8_t value) {
   for (int dx=0; dx<PIECE_WIDTH; dx++)
     for (int dy=0; dy<PIECE_HEIGHT; dy++)
-      if (tetronimo[p.id][p.rot][dy][dx]) {
+      if (pgm_read_byte(&tetronimo[p.id][p.rot][dy][dx])) {
         int x = p.x + dx;
         int y = p.y - dy;
         if (inBoard(x, y))
@@ -317,7 +317,7 @@ void renderFrame(unsigned long now) {
     for (int dy=0; dy<PIECE_HEIGHT; dy++) {
       int x = ghost.x + dx;
       int y = ghost.y - dy;
-      if (inBoard(x, y) && tetronimo[ghost.id][ghost.rot][dy][dx]) {
+      if (inBoard(x, y) && pgm_read_byte(&tetronimo[ghost.id][ghost.rot][dy][dx])) {
         CRGB c = piece_colors[curColorId];
         c.fadeLightBy(205);
         leds[XY(x,y)] = c;
@@ -327,7 +327,7 @@ void renderFrame(unsigned long now) {
   // current piece
   for (int dx=0; dx<PIECE_WIDTH; dx++)
     for (int dy=0; dy<PIECE_HEIGHT; dy++)
-      if (tetronimo[curPiece.id][curPiece.rot][dy][dx]) {
+      if (pgm_read_byte(&tetronimo[curPiece.id][curPiece.rot][dy][dx])) {
         int x = curPiece.x + dx;
         int y = curPiece.y - dy;
         if (inBoard(x, y))

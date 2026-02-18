@@ -1,7 +1,7 @@
 #define PIECE_HEIGHT 4
 #define PIECE_WIDTH  4
 
-uint8_t tetronimo[7][4][PIECE_HEIGHT][PIECE_WIDTH] = {
+const uint8_t tetronimo[7][4][PIECE_HEIGHT][PIECE_WIDTH] PROGMEM = {
 
   // L block
   {
