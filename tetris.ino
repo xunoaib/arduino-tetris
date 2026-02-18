@@ -238,17 +238,27 @@ bool startLineClearAnimIfNeeded(unsigned long now) {
 }
 
 void spawnNewPiece() {
+  // If already game over, never spawn.
+  if (gameState == STATE_GAME_OVER) return;
+
   curPiece.x = (WIDTH - PIECE_WIDTH) / 2;
-  curPiece.y = HEIGHT + PIECE_HEIGHT;
-  curPiece.id = random(0, sizeof(tetronimo) / sizeof(tetronimo[0]));
+
+  // Spawn so the piece occupies the top rows immediately.
+  // With your coordinate system (cells at y = curPiece.y - dy),
+  // setting y like this makes the top-most dy land on y = HEIGHT-1.
+  curPiece.y = (HEIGHT - 1) + (PIECE_HEIGHT - 1);
+
+  curPiece.id  = random(0, sizeof(tetronimo) / sizeof(tetronimo[0]));
   curPiece.rot = 0;
-  curColorId = random(1, sizeof(piece_colors) / sizeof(piece_colors[0]));
+  curColorId   = random(1, sizeof(piece_colors) / sizeof(piece_colors[0]));
 
-  curPiece.y--; // enter playfield
-
+  // Now collision detection actually checks in-board cells.
   if (collides(curPiece)) {
     gameState = STATE_GAME_OVER;
+    pendingSpawn = false; // cancel any queued spawn
+    softDropActive = false;
     Serial.println("Game over!");
+    return;
   }
 }
 
@@ -261,9 +271,10 @@ void resetGame() {
 
   clearBoard();
   updateFallDelay();
+
+  gameState = STATE_PLAYING;   // set BEFORE spawn
   spawnNewPiece();
 
-  gameState = STATE_PLAYING;
   lastFall = millis();
 }
 
@@ -277,7 +288,9 @@ void lockPieceAndMaybeClear(unsigned long now) {
     return;
   }
 
-  spawnNewPiece();
+  if (gameState != STATE_GAME_OVER)
+    spawnNewPiece();
+
   lastFall = now;
 }
 
@@ -386,7 +399,7 @@ void updateGameState(unsigned long now) {
       collapseClearedLines();
       gameState = STATE_PLAYING;
 
-      if (pendingSpawn) {
+      if (pendingSpawn && gameState != STATE_GAME_OVER) {
         pendingSpawn = false;
         spawnNewPiece();
       }
