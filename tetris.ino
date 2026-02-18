@@ -21,6 +21,8 @@ constexpr uint8_t PIN_NES_PULSE = 8;
 
 #define EMPTY 0
 
+#define SOFT_DROP_DELAY 33
+
 struct Kick { int8_t dx, dy; };
 
 const Kick basicKicks[] = {
@@ -86,6 +88,9 @@ unsigned long animStart = 0;
 uint16_t animDuration = 0;
 uint8_t animData[HEIGHT];     // mask of rows being cleared
 bool pendingSpawn = false;    // spawn piece after clear animation completes
+
+// soft drop latch for current frame
+bool softDropActive = false;
 
 constexpr uint16_t XY(uint8_t x, uint8_t y) {
   return (y & 1) ? (y * WIDTH + (WIDTH - 1 - x)) : (y * WIDTH + x);
@@ -252,6 +257,7 @@ void resetGame() {
   score = 0;
   lines_cleared = 0;
   pendingSpawn = false;
+  softDropActive = false;
 
   clearBoard();
   updateFallDelay();
@@ -284,16 +290,16 @@ void stepGravity(unsigned long now) {
 }
 
 void handleInput(unsigned long now) {
-  controller.update();
-
   // restart on game over
   if (gameState == STATE_GAME_OVER) {
+    softDropActive = false;
     if (controller.justPressed(NesController::Start)) resetGame();
     return;
   }
 
   // ignore movement during line clear animation
   if (gameState == STATE_LINE_CLEAR_ANIM) {
+    softDropActive = false;
     return;
   }
 
@@ -303,6 +309,7 @@ void handleInput(unsigned long now) {
       gameState = STATE_PAUSED;
       animStart = now;
       animDuration = 300; // fade time
+      softDropActive = false;
     } else if (gameState == STATE_PAUSED) {
       gameState = STATE_PLAYING;
       lastFall = now; // prevent gravity jump
@@ -311,6 +318,7 @@ void handleInput(unsigned long now) {
 
   // paused menu controls
   if (gameState == STATE_PAUSED) {
+    softDropActive = false;
     if (controller.justPressed(NesController::Down)) {
       brightness = max((int)brightness - 2, 1);
       FastLED.setBrightness(brightness);
@@ -323,7 +331,12 @@ void handleInput(unsigned long now) {
     return;
   }
 
-  if (gameState != STATE_PLAYING) return;
+  if (gameState != STATE_PLAYING) {
+    softDropActive = false;
+    return;
+  }
+
+  softDropActive = controller.isHeld(NesController::Up);
 
   // hard drop
   if (controller.justPressed(NesController::Down)) {
@@ -347,7 +360,7 @@ void handleInput(unsigned long now) {
   if (controller.justPressed(NesController::Left))  p.x--;
   if (controller.justPressed(NesController::Right)) p.x++;
 
-  // reset (optional)
+  // reset
   if (controller.justPressed(NesController::Start)) {
     resetGame();
     return;
@@ -360,10 +373,14 @@ void handleInput(unsigned long now) {
 
 void updateGameState(unsigned long now) {
   if (gameState == STATE_PLAYING) {
-    if (now - lastFall >= fallDelay) {
+
+    uint16_t activeDelay = softDropActive ? SOFT_DROP_DELAY : fallDelay;
+
+    if (now - lastFall >= activeDelay) {
       lastFall = now;
       stepGravity(now);
     }
+
   } else if (gameState == STATE_LINE_CLEAR_ANIM) {
     if (now - animStart >= animDuration) {
       collapseClearedLines();
@@ -460,6 +477,9 @@ void setup() {
 
 void loop() {
   unsigned long now = millis();
+
+  controller.update();
+
   handleInput(now);
   updateGameState(now);
   renderFrame(now);
