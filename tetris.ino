@@ -49,17 +49,17 @@ struct Piece {
   int8_t x, y;
 };
 
-long brightness = 10;
+uint8_t brightness = 10;
+uint16_t fallDelay;
 unsigned long lastClockUpdate = 0;
-unsigned long fallDelay;
 unsigned long lastFall;
 bool paused = false;
 
-unsigned long level = 0;
-unsigned long score = 0;
-unsigned long lines_cleared = 0;
+uint8_t level = 0;
+uint32_t score = 0;
+uint16_t lines_cleared = 0;
 
-const uint16_t levelSpeeds[] = {
+const uint16_t levelSpeeds[] PROGMEM = {
   470, 380, 300, 220, 130,
   100, 80, 80, 70, 70, 60, 60,
   50, 50, 40, 40
@@ -288,7 +288,7 @@ void clearFullLines() {
 
 void updateFallDelay() {
   uint8_t l = min(level, (int)(sizeof(levelSpeeds)/sizeof(levelSpeeds[0]) - 1));
-  fallDelay = levelSpeeds[l];
+  fallDelay = pgm_read_byte(&levelSpeeds[l]);
 }
 
 void stepGravity() {
