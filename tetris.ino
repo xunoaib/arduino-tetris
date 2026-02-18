@@ -346,9 +346,12 @@ void spawnNewPiece() {
 }
 
 void resetGame() {
+  level = 0;
+  score = 0;
+  lines_cleared = 0;
+  updateFallDelay();
   spawnNewPiece();
   clearBoard();
-  updateFallDelay();
 }
 
 void loop() {
