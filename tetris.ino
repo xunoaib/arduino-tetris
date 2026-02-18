@@ -3,28 +3,22 @@
 #include "NesController.h"
 #include "tetronimoes.h"
 
-// nes controller pins
 constexpr uint8_t PIN_NES_DATA  = 6;
 constexpr uint8_t PIN_NES_LATCH = 7;
 constexpr uint8_t PIN_NES_PULSE = 8;
 
-// led data pin
 #define PIN_LED_DATA 9
 
-// board dimensions
 #define WIDTH 8
 #define HEIGHT 32
 
-// led configuration
 #define LED_TYPE WS2812B
 #define COLOR_ORDER GRB
 #define NUM_LEDS (WIDTH * HEIGHT)
 
-// led power
 #define MAX_POWER_MILLIAMPS 500
 #define LED_STRIP_VOLTAGE 5
 
-// alias board value
 #define EMPTY 0
 
 struct Kick { int8_t dx, dy; };
@@ -58,12 +52,10 @@ enum GameState {
 
 GameState gameState = STATE_PLAYING;
 
-// gameplay
 uint8_t brightness = 10;
 uint16_t fallDelay;
 unsigned long lastFall = 0;
 
-// scoring
 uint8_t level = 0;
 uint32_t score = 0;
 uint16_t lines_cleared = 0;
@@ -74,7 +66,6 @@ const uint16_t levelSpeeds[] PROGMEM = {
    40,  40,  40,  40,  40,  40,  40,  40,  40,  35
 };
 
-// board + leds
 uint8_t board[WIDTH][HEIGHT];
 CRGB leds[NUM_LEDS];
 
@@ -91,7 +82,6 @@ CRGB piece_colors[] = {
 Piece curPiece;
 uint8_t curColorId;
 
-// animation control
 unsigned long animStart = 0;
 uint16_t animDuration = 0;
 uint8_t animData[HEIGHT];     // mask of rows being cleared
@@ -101,7 +91,6 @@ constexpr uint16_t XY(uint8_t x, uint8_t y) {
   return (y & 1) ? (y * WIDTH + (WIDTH - 1 - x)) : (y * WIDTH + x);
 }
 
-// ---------- helpers ----------
 inline bool inBoard(int x, int y) {
   return x >= 0 && x < WIDTH && y >= 0 && y < HEIGHT;
 }
@@ -125,7 +114,6 @@ void updateFallDelay() {
   fallDelay = pgm_read_word(&levelSpeeds[l]);
 }
 
-// ---------- collision ----------
 bool collidesAt(Piece p, int dyOffset) {
   for (int dx=0; dx<PIECE_WIDTH; dx++)
     for (int dy=0; dy<PIECE_HEIGHT; dy++) {
@@ -168,7 +156,6 @@ bool tryRotate(int8_t dir) {
   return false;
 }
 
-// writes the given value to spots on the board masked by the given piece at a location
 void writePiece(Piece p, uint8_t value) {
   for (int dx=0; dx<PIECE_WIDTH; dx++)
     for (int dy=0; dy<PIECE_HEIGHT; dy++)
@@ -180,7 +167,6 @@ void writePiece(Piece p, uint8_t value) {
       }
 }
 
-// ---------- line clear animation pipeline ----------
 int detectFullLines(uint8_t outMask[HEIGHT]) {
   int num = 0;
   for (int y=0; y<HEIGHT; y++) {
@@ -201,7 +187,6 @@ void collapseClearedLines() {
       continue;
     }
 
-    // shift board down at row y
     for (int yy = y; yy < HEIGHT - 1; yy++)
       for (int x = 0; x < WIDTH; x++)
         board[x][yy] = board[x][yy + 1];
@@ -209,12 +194,9 @@ void collapseClearedLines() {
     for (int x = 0; x < WIDTH; x++)
       board[x][HEIGHT - 1] = EMPTY;
 
-    // IMPORTANT: shift the anim mask the same way so we don't re-clear forever
     for (int yy = y; yy < HEIGHT - 1; yy++)
       animData[yy] = animData[yy + 1];
     animData[HEIGHT - 1] = 0;
-
-    // do NOT increment y; re-check same y after shift
   }
 }
 
@@ -223,7 +205,6 @@ bool startLineClearAnimIfNeeded(unsigned long now) {
   int num_lines = detectFullLines(mask);
   if (!num_lines) return false;
 
-  // score & level update (same as your original)
   int base = 0;
   switch (num_lines) {
     case 1: base = 40; break;
@@ -251,7 +232,6 @@ bool startLineClearAnimIfNeeded(unsigned long now) {
   return true;
 }
 
-// ---------- gameplay ----------
 void spawnNewPiece() {
   curPiece.x = (WIDTH - PIECE_WIDTH) / 2;
   curPiece.y = HEIGHT + PIECE_HEIGHT;
@@ -287,7 +267,7 @@ void lockPieceAndMaybeClear(unsigned long now) {
   // if we start a line clear anim, delay spawn until animation completes
   if (startLineClearAnimIfNeeded(now)) {
     pendingSpawn = true;
-    lastFall = now; // keep gravity in sync
+    lastFall = now;
     return;
   }
 
@@ -303,7 +283,6 @@ void stepGravity(unsigned long now) {
   curPiece.y--;
 }
 
-// ---------- input ----------
 void handleInput(unsigned long now) {
   controller.update();
 
@@ -344,7 +323,6 @@ void handleInput(unsigned long now) {
     return;
   }
 
-  // ---- playing controls ----
   if (gameState != STATE_PLAYING) return;
 
   // hard drop
@@ -380,7 +358,6 @@ void handleInput(unsigned long now) {
     curPiece = p;
 }
 
-// ---------- update loop ----------
 void updateGameState(unsigned long now) {
   if (gameState == STATE_PLAYING) {
     if (now - lastFall >= fallDelay) {
@@ -397,19 +374,17 @@ void updateGameState(unsigned long now) {
         spawnNewPiece();
       }
 
-      lastFall = now; // prevent gravity jump after animation
+      lastFall = now; // prevent gravity after animation
     }
   } else {
-    // paused or game over: prevent gravity accumulation
-    lastFall = now;
+    lastFall = now; // prevent gravity after paused/game over
   }
 }
 
-// ---------- rendering ----------
 void renderFrame(unsigned long now) {
   FastLED.clear();
 
-  // base board render
+  // render base board
   for (int y=0; y<HEIGHT; y++)
     for (int x=0; x<WIDTH; x++)
       leds[XY(x, y)] = piece_colors[board[x][y]];
@@ -424,7 +399,7 @@ void renderFrame(unsigned long now) {
         }
       }
     }
-    // during animation, don't draw ghost/current piece
+    // don't draw ghost/current piece during animation
     FastLED.show();
     return;
   }
@@ -468,7 +443,6 @@ void renderFrame(unsigned long now) {
   FastLED.show();
 }
 
-// ---------- arduino ----------
 void setup() {
   Serial.begin(9600);
 
