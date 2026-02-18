@@ -288,7 +288,7 @@ void clearFullLines() {
 
 void updateFallDelay() {
   uint8_t l = min(level, (int)(sizeof(levelSpeeds)/sizeof(levelSpeeds[0]) - 1));
-  fallDelay = pgm_read_byte(&levelSpeeds[l]);
+  fallDelay = pgm_read_word(&levelSpeeds[l]);
 }
 
 void stepGravity() {
