@@ -357,6 +357,7 @@ void spawnNewPiece() {
 
   if (collides(curPiece)) {
     gameOver = true;
+    Serial.println("Game over!");
   }
 }
 
