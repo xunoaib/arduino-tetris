@@ -142,9 +142,9 @@ void handleInput(unsigned long now) {
   }
 
   else if (controller.justPressed(NesController::A))
-    tryRotate(+1);
+    p.rot = (p.rot + 1) % 4;
   else if (controller.justPressed(NesController::B))
-    tryRotate(-1);
+    p.rot = (p.rot + 3) % 4;
   else if (controller.justPressed(NesController::Left))
     p.x--;
   else if (controller.justPressed(NesController::Right))
