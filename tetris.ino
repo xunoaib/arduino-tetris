@@ -54,6 +54,7 @@ uint16_t fallDelay;
 unsigned long lastClockUpdate = 0;
 unsigned long lastFall;
 bool paused = false;
+bool gameOver = false;
 
 uint8_t level = 0;
 uint32_t score = 0;
@@ -110,6 +111,14 @@ void clearBoard() {
 void handleInput(unsigned long now) {
   controller.update();
 
+  if (gameOver) {
+    if (controller.justPressed(NesController::Start)) {
+      resetGame();
+      gameOver = false;
+    }
+    return;
+  }
+
   if (controller.justPressed(NesController::Select)) {
     paused = !paused;
   } else if (paused) {
@@ -160,7 +169,7 @@ void handleInput(unsigned long now) {
 }
 
 void updateGameState(unsigned long now) {
-  if (paused) {
+  if (paused || gameOver) {
     lastFall = now;
     return;
   }
@@ -343,6 +352,12 @@ void spawnNewPiece() {
   curPiece.id = random(0, sizeof(tetronimo) / sizeof(tetronimo[0]));
   curPiece.rot = 0;
   curColorId = random(1, sizeof(piece_colors) / sizeof(piece_colors[0]));
+
+  curPiece.y--;
+
+  if (collides(curPiece)) {
+    gameOver = true;
+  }
 }
 
 void resetGame() {
