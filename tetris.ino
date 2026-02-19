@@ -92,6 +92,13 @@ bool pendingSpawn = false;    // spawn piece after clear animation completes
 // soft drop latch for current frame
 bool softDropActive = false;
 
+// --- Game Over Dissolve ---
+bool dissolveActive = false;
+uint16_t dissolveOrder[NUM_LEDS];
+uint16_t dissolveIndex = 0;
+unsigned long dissolveLastStep = 0;
+const uint16_t dissolveStepDelay = 8; // ms between pixel kills
+
 constexpr uint16_t XY(uint8_t x, uint8_t y) {
   return (y & 1) ? (y * WIDTH + (WIDTH - 1 - x)) : (y * WIDTH + x);
 }
@@ -252,14 +259,31 @@ void spawnNewPiece() {
   curPiece.rot = 0;
   curColorId   = random(1, sizeof(piece_colors) / sizeof(piece_colors[0]));
 
-  // Now collision detection actually checks in-board cells.
   if (collides(curPiece)) {
     gameState = STATE_GAME_OVER;
-    pendingSpawn = false; // cancel any queued spawn
+    pendingSpawn = false;
     softDropActive = false;
+
+    // Initialize dissolve
+    dissolveActive = true;
+    dissolveIndex = 0;
+    dissolveLastStep = millis();
+
+    // Build shuffled index list
+    for (uint16_t i = 0; i < NUM_LEDS; i++)
+      dissolveOrder[i] = i;
+
+    for (uint16_t i = 0; i < NUM_LEDS; i++) {
+      uint16_t j = random(NUM_LEDS);
+      uint16_t tmp = dissolveOrder[i];
+      dissolveOrder[i] = dissolveOrder[j];
+      dissolveOrder[j] = tmp;
+    }
+
     Serial.println("Game over!");
     return;
   }
+
 }
 
 void resetGame() {
@@ -412,6 +436,29 @@ void updateGameState(unsigned long now) {
 }
 
 void renderFrame(unsigned long now) {
+  // --- Dissolve Effect ---
+  if (gameState == STATE_GAME_OVER && dissolveActive) {
+
+    if (millis() - dissolveLastStep >= dissolveStepDelay) {
+      dissolveLastStep = millis();
+
+      if (dissolveIndex < NUM_LEDS) {
+        leds[dissolveOrder[dissolveIndex]] = CRGB::Black;
+        dissolveIndex++;
+      } else {
+        dissolveActive = false; // finished
+      }
+    }
+
+    FastLED.show();
+    return;
+  }
+
+  if (gameState == STATE_GAME_OVER) {
+    FastLED.show();
+    return;
+  }
+
   FastLED.clear();
 
   // render base board
