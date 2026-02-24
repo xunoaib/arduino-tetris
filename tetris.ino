@@ -94,7 +94,7 @@ bool softDropActive = false;
 
 // --- Game Over Dissolve ---
 bool dissolveActive = false;
-uint16_t dissolveOrder[NUM_LEDS];
+uint8_t dissolveOrder[NUM_LEDS];
 uint16_t dissolveIndex = 0;
 unsigned long dissolveLastStep = 0;
 const uint16_t dissolveStepDelay = 8; // ms between pixel kills
