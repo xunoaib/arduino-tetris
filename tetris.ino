@@ -72,14 +72,13 @@ uint8_t board[WIDTH][HEIGHT];
 CRGB leds[NUM_LEDS];
 
 const CRGB piece_colors[] PROGMEM = {
-  CRGB::Black, // empty
-  CRGB::Cyan,
-  CRGB::Yellow,
-  CRGB::Purple,
+  CRGB::Black,
   CRGB::Green,
   CRGB::Red,
   CRGB::Blue,
-  CRGB::Orange,
+  CRGB::Yellow,
+  CRGB::Magenta,
+  // CRGB::Orange, // sucks
 };
 
 Piece curPiece;
@@ -286,7 +285,7 @@ void spawnNewPiece() {
 
   curPiece.id  = getNextPieceId();
   curPiece.rot = 0;
-  curColorId = (curPiece.id % (sizeof(piece_colors)/sizeof(piece_colors[0]) - 1)) + 1;
+  curColorId   = random(1, sizeof(piece_colors) / sizeof(piece_colors[0]));
 
   if (collides(curPiece)) {
     gameState = STATE_GAME_OVER;
