@@ -71,7 +71,7 @@ const uint16_t levelSpeeds[] PROGMEM = {
 uint8_t board[WIDTH][HEIGHT];
 CRGB leds[NUM_LEDS];
 
-CRGB piece_colors[] = {
+const CRGB piece_colors[] PROGMEM = {
   CRGB::Black,
   CRGB::Green,
   CRGB::Red,
@@ -492,7 +492,7 @@ void renderFrame(unsigned long now) {
   // render base board
   for (int y=0; y<HEIGHT; y++)
     for (int x=0; x<WIDTH; x++)
-      leds[XY(x, y)] = piece_colors[board[x][y]];
+      leds[XY(x, y)] = pgm_read_dword(&piece_colors[board[x][y]]);
 
   // line clear flash overlay
   if (gameState == STATE_LINE_CLEAR_ANIM) {
@@ -519,7 +519,7 @@ void renderFrame(unsigned long now) {
         int x = ghost.x + dx;
         int y = ghost.y - dy;
         if (inBoard(x, y) && pgm_read_byte(&tetronimo[ghost.id][ghost.rot][dy][dx])) {
-          CRGB c = piece_colors[curColorId];
+          CRGB c = pgm_read_dword(&piece_colors[curColorId]);
           c.fadeLightBy(205);
           leds[XY(x,y)] = c;
         }
@@ -532,7 +532,7 @@ void renderFrame(unsigned long now) {
           int x = curPiece.x + dx;
           int y = curPiece.y - dy;
           if (inBoard(x, y))
-            leds[XY(x, y)] = piece_colors[curColorId];
+            leds[XY(x, y)] = pgm_read_dword(&piece_colors[curColorId]);
         }
   }
 
