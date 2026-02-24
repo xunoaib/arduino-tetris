@@ -491,8 +491,11 @@ void renderFrame(unsigned long now) {
 
   // render base board
   for (int y=0; y<HEIGHT; y++)
-    for (int x=0; x<WIDTH; x++)
-      leds[XY(x, y)] = pgm_read_dword(&piece_colors[board[x][y]]);
+    for (int x=0; x<WIDTH; x++) {
+      CRGB c;
+      memcpy_P(&c, &piece_colors[board[x][y]], sizeof(CRGB));
+      leds[XY(x, y)] = c;
+    }
 
   // line clear flash overlay
   if (gameState == STATE_LINE_CLEAR_ANIM) {
@@ -519,7 +522,11 @@ void renderFrame(unsigned long now) {
         int x = ghost.x + dx;
         int y = ghost.y - dy;
         if (inBoard(x, y) && pgm_read_byte(&tetronimo[ghost.id][ghost.rot][dy][dx])) {
-          CRGB c = pgm_read_dword(&piece_colors[curColorId]);
+
+          CRGB c;
+          memcpy_P(&c, &piece_colors[curColorId], sizeof(CRGB));
+          leds[XY(x, y)] = c;
+
           c.fadeLightBy(205);
           leds[XY(x,y)] = c;
         }
@@ -531,8 +538,11 @@ void renderFrame(unsigned long now) {
         if (pgm_read_byte(&tetronimo[curPiece.id][curPiece.rot][dy][dx])) {
           int x = curPiece.x + dx;
           int y = curPiece.y - dy;
-          if (inBoard(x, y))
-            leds[XY(x, y)] = pgm_read_dword(&piece_colors[curColorId]);
+          if (inBoard(x, y)) {
+            CRGB c;
+            memcpy_P(&c, &piece_colors[curColorId], sizeof(CRGB));
+            leds[XY(x, y)] = c;
+          }
         }
   }
 
