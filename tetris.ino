@@ -97,7 +97,7 @@ bool dissolveActive = false;
 uint8_t dissolveOrder[NUM_LEDS];
 uint16_t dissolveIndex = 0;
 unsigned long dissolveLastStep = 0;
-const uint16_t dissolveStepDelay = 8; // ms between pixel kills
+const uint8_t dissolveStepDelay = 8; // ms between pixel kills
 
 // --- Final Score Screen ---
 bool finalScoreActive = false;
