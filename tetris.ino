@@ -78,7 +78,8 @@ const CRGB piece_colors[] PROGMEM = {
   CRGB::Blue,
   CRGB::Yellow,
   CRGB::Magenta,
-  // CRGB::Orange, // sucks
+  CRGB::Orange,
+  CRGB::Cyan,
 };
 
 Piece curPiece;
@@ -285,7 +286,11 @@ void spawnNewPiece() {
 
   curPiece.id  = getNextPieceId();
   curPiece.rot = 0;
-  curColorId   = random(1, sizeof(piece_colors) / sizeof(piece_colors[0]));
+
+  uint8_t oldColorId = curColorId;
+  while (curColorId == oldColorId) {
+    curColorId = random(1, sizeof(piece_colors) / sizeof(piece_colors[0]));
+  }
 
   if (collides(curPiece)) {
     gameState = STATE_GAME_OVER;
