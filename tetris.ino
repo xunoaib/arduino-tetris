@@ -72,13 +72,14 @@ uint8_t board[WIDTH][HEIGHT];
 CRGB leds[NUM_LEDS];
 
 const CRGB piece_colors[] PROGMEM = {
-  CRGB::Black,
+  CRGB::Black, // empty
+  CRGB::Cyan,
+  CRGB::Yellow,
+  CRGB::Purple,
   CRGB::Green,
   CRGB::Red,
   CRGB::Blue,
-  CRGB::Yellow,
-  CRGB::Magenta,
-  // CRGB::Orange, // sucks
+  CRGB::Orange,
 };
 
 Piece curPiece;
@@ -103,6 +104,32 @@ const uint8_t dissolveStepDelay = 8; // ms between pixel kills
 bool finalScoreActive = false;
 unsigned long finalScoreStart = 0;
 const uint16_t finalScoreFadeTime = 800; // ms fade-in time
+
+// 7 bag randomization
+constexpr uint8_t NUM_PIECES = sizeof(tetronimo) / sizeof(tetronimo[0]);
+uint8_t pieceBag[NUM_PIECES];
+uint8_t bagIndex = NUM_PIECES;
+
+void refillBag() {
+  for (uint8_t i = 0; i < NUM_PIECES; i++)
+    pieceBag[i] = i;
+
+  for (int i = 0; i < NUM_PIECES; i++) {
+    int j = random(i + 1);
+    uint8_t tmp = pieceBag[i];
+    pieceBag[i] = pieceBag[j];
+    pieceBag[j] = tmp;
+  }
+
+  bagIndex = 0;
+}
+
+uint8_t getNextPieceId() {
+  if (bagIndex >= NUM_PIECES)
+    refillBag();
+
+  return pieceBag[bagIndex++];
+}
 
 constexpr uint16_t XY(uint8_t x, uint8_t y) {
   return (y & 1) ? (y * WIDTH + (WIDTH - 1 - x)) : (y * WIDTH + x);
@@ -257,9 +284,9 @@ void spawnNewPiece() {
   // setting y like this makes the top-most dy land on y = HEIGHT-1.
   curPiece.y = (HEIGHT - 1) + (PIECE_HEIGHT - 1);
 
-  curPiece.id  = random(0, sizeof(tetronimo) / sizeof(tetronimo[0]));
+  curPiece.id  = getNextPieceId();
   curPiece.rot = 0;
-  curColorId   = random(1, sizeof(piece_colors) / sizeof(piece_colors[0]));
+  curColorId = (curPiece.id % (sizeof(piece_colors)/sizeof(piece_colors[0]) - 1)) + 1;
 
   if (collides(curPiece)) {
     gameState = STATE_GAME_OVER;
