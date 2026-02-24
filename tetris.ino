@@ -99,6 +99,11 @@ uint16_t dissolveIndex = 0;
 unsigned long dissolveLastStep = 0;
 const uint16_t dissolveStepDelay = 8; // ms between pixel kills
 
+// --- Final Score Screen ---
+bool finalScoreActive = false;
+unsigned long finalScoreStart = 0;
+const uint16_t finalScoreFadeTime = 800; // ms fade-in time
+
 constexpr uint16_t XY(uint8_t x, uint8_t y) {
   return (y & 1) ? (y * WIDTH + (WIDTH - 1 - x)) : (y * WIDTH + x);
 }
@@ -245,9 +250,6 @@ bool startLineClearAnimIfNeeded(unsigned long now) {
 }
 
 void spawnNewPiece() {
-  // If already game over, never spawn.
-  if (gameState == STATE_GAME_OVER) return;
-
   curPiece.x = (WIDTH - PIECE_WIDTH) / 2;
 
   // Spawn so the piece occupies the top rows immediately.
@@ -330,7 +332,10 @@ void handleInput(unsigned long now) {
   // restart on game over
   if (gameState == STATE_GAME_OVER) {
     softDropActive = false;
-    if (controller.justPressed(NesController::Start)) resetGame();
+    if (controller.justPressed(NesController::Start)) {
+      finalScoreActive = false;
+      resetGame();
+    }
     return;
   }
 
@@ -446,7 +451,11 @@ void renderFrame(unsigned long now) {
         leds[dissolveOrder[dissolveIndex]] = CRGB::Black;
         dissolveIndex++;
       } else {
-        dissolveActive = false; // finished
+          dissolveActive = false;
+
+          // start final score screen
+          finalScoreActive = true;
+          finalScoreStart = millis();
       }
     }
 
@@ -454,7 +463,26 @@ void renderFrame(unsigned long now) {
     return;
   }
 
-  if (gameState == STATE_GAME_OVER) {
+  // --- Final Score Screen ---
+  if (gameState == STATE_GAME_OVER && finalScoreActive) {
+
+    FastLED.clear();
+
+    uint8_t fade = map(
+      (uint16_t)min(millis() - finalScoreStart, (unsigned long)finalScoreFadeTime),
+      0, finalScoreFadeTime,
+      0, 255
+    );
+
+    for (uint8_t bit = 0; bit < 32; bit++) {
+      if (score & (1UL << bit)) {
+        for (uint8_t x = 2; x < 6; x++) {
+          leds[XY(x, bit)] = CRGB::White;
+          leds[XY(x, bit)].fadeLightBy(255 - fade);
+        }
+      }
+    }
+
     FastLED.show();
     return;
   }
