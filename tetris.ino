@@ -84,6 +84,7 @@ const CRGB piece_colors[] PROGMEM = {
 
 Piece curPiece;
 uint8_t curColorId;
+uint8_t lastPieceId = 255;
 
 unsigned long animStart = 0;
 uint16_t animDuration = 0;
@@ -128,7 +129,23 @@ uint8_t getNextPieceId() {
   if (bagIndex >= NUM_PIECES)
     refillBag();
 
-  return pieceBag[bagIndex++];
+  uint8_t id = pieceBag[bagIndex++];
+
+  // prevent duplicate across bag boundary
+  if (id == lastPieceId) {
+
+    if (bagIndex == 1) {  
+      uint8_t swapIndex = random(1, NUM_PIECES);  
+      uint8_t tmp = pieceBag[0];
+      pieceBag[0] = pieceBag[swapIndex];
+      pieceBag[swapIndex] = tmp;
+
+      id = pieceBag[0];
+    }
+  }
+
+  lastPieceId = id;
+  return id;
 }
 
 constexpr uint16_t XY(uint8_t x, uint8_t y) {
@@ -284,7 +301,7 @@ void spawnNewPiece() {
   // setting y like this makes the top-most dy land on y = HEIGHT-1.
   curPiece.y = (HEIGHT - 1) + (PIECE_HEIGHT - 1);
 
-  curPiece.id  = getNextPieceId();
+  curPiece.id = getNextPieceId();
   curPiece.rot = 0;
 
   uint8_t oldColorId = curColorId;
