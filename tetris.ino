@@ -111,6 +111,16 @@ constexpr uint8_t NUM_PIECES = sizeof(tetronimo) / sizeof(tetronimo[0]);
 uint8_t pieceBag[NUM_PIECES];
 uint8_t bagIndex = NUM_PIECES;
 
+// delayed auto shift
+unsigned long lastDasMove = 0;
+unsigned long dasHoldTime = 0;
+uint8_t lastDir = 0; // 0: none, 1: left, 2: right
+
+const uint16_t DAS_DELAY = 180; // delay before repeat starts
+const uint16_t DAS_SPEED = 60;  // speed of repeat
+
+// ------------------------------
+
 void refillBag() {
   for (uint8_t i = 0; i < NUM_PIECES; i++)
     pieceBag[i] = i;
@@ -134,8 +144,8 @@ uint8_t getNextPieceId() {
   // prevent duplicate pieces across bag boundary
   if (id == lastPieceId) {
 
-    if (bagIndex == 1) {  
-      uint8_t swapIndex = random(1, NUM_PIECES);  
+    if (bagIndex == 1) {
+      uint8_t swapIndex = random(1, NUM_PIECES);
       uint8_t tmp = pieceBag[0];
       pieceBag[0] = pieceBag[swapIndex];
       pieceBag[swapIndex] = tmp;
@@ -243,7 +253,7 @@ int detectFullLines(uint8_t outMask[HEIGHT]) {
 
 void collapseClearedLines() {
   for (int y = 0; y < HEIGHT; ) {
-    if (!animData[y]) { 
+    if (!animData[y]) {
       y++;
       continue;
     }
@@ -442,19 +452,49 @@ void handleInput(unsigned long now) {
     return;
   }
 
-  // lateral movement
-  if (controller.justPressed(NesController::Left))  p.x--;
-  if (controller.justPressed(NesController::Right)) p.x++;
+  // lateral movement with DAS
+  bool leftHeld = controller.isHeld(NesController::Left);
+  bool rightHeld = controller.isHeld(NesController::Right);
+  uint8_t currentDir = 0;
+
+  if (leftHeld) currentDir = 1;
+  if (rightHeld) currentDir = 2;
+
+  if (currentDir != 0) {
+    if (lastDir != currentDir) {
+      // initial tap
+      Piece p = curPiece;
+      if (currentDir == 1) p.x--; else p.x++;
+
+      if (pieceInBounds(p) && !collides(p)) {
+        curPiece = p;
+      }
+
+      dasHoldTime = now;
+      lastDasMove = now;
+      lastDir = currentDir;
+    }
+    else if (now - dasHoldTime >= DAS_DELAY) {
+      // auto-repeat
+      if (now - lastDasMove >= DAS_SPEED) {
+        Piece p = curPiece;
+        if (currentDir == 1) p.x--; else p.x++;
+
+        if (pieceInBounds(p) && !collides(p)) {
+          curPiece = p;
+        }
+        lastDasMove = now;
+      }
+    }
+  } else {
+    lastDir = 0; // reset when no button is held
+  }
 
   // reset
   if (controller.justPressed(NesController::Start)) {
     resetGame();
     return;
   }
-
-  // apply movement if legal
-  if ((p.x != curPiece.x) && pieceInBounds(p) && !collides(p))
-    curPiece = p;
 }
 
 void updateGameState(unsigned long now) {
