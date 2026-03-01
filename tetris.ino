@@ -79,7 +79,7 @@ const CRGB piece_colors[] PROGMEM = {
   CRGB::Blue,
   CRGB::Yellow,
   CRGB::Magenta,
-  CRGB::Orange,
+  0xFF4500,
   CRGB::Cyan,
 };
 
