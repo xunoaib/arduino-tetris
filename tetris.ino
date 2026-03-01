@@ -94,14 +94,14 @@ bool pendingSpawn = false;    // spawn piece after clear animation completes
 // soft drop latch for current frame
 bool softDropActive = false;
 
-// --- Game Over Dissolve ---
+// --- game over dissolve ---
 bool dissolveActive = false;
 uint8_t dissolveOrder[NUM_LEDS];
 uint16_t dissolveIndex = 0;
 unsigned long dissolveLastStep = 0;
-const uint8_t dissolveStepDelay = 8; // ms between pixel kills
+const uint8_t dissolveStepDelay = 8; // ms between pixel wipes
 
-// --- Final Score Screen ---
+// --- final score screen ---
 bool finalScoreActive = false;
 unsigned long finalScoreStart = 0;
 const uint16_t finalScoreFadeTime = 800; // ms fade-in time
@@ -131,7 +131,7 @@ uint8_t getNextPieceId() {
 
   uint8_t id = pieceBag[bagIndex++];
 
-  // prevent duplicate across bag boundary
+  // prevent duplicate pieces across bag boundary
   if (id == lastPieceId) {
 
     if (bagIndex == 1) {  
@@ -295,10 +295,6 @@ bool startLineClearAnimIfNeeded(unsigned long now) {
 
 void spawnNewPiece() {
   curPiece.x = (WIDTH - PIECE_WIDTH) / 2;
-
-  // Spawn so the piece occupies the top rows immediately.
-  // With your coordinate system (cells at y = curPiece.y - dy),
-  // setting y like this makes the top-most dy land on y = HEIGHT-1.
   curPiece.y = (HEIGHT - 1) + (PIECE_HEIGHT - 1);
 
   curPiece.id = getNextPieceId();
@@ -314,12 +310,12 @@ void spawnNewPiece() {
     pendingSpawn = false;
     softDropActive = false;
 
-    // Initialize dissolve
+    // initialize dissolve
     dissolveActive = true;
     dissolveIndex = 0;
     dissolveLastStep = millis();
 
-    // Build shuffled index list
+    // build shuffled list of indices
     for (uint16_t i = 0; i < NUM_LEDS; i++)
       dissolveOrder[i] = i;
 
@@ -346,7 +342,7 @@ void resetGame() {
   clearBoard();
   updateFallDelay();
 
-  gameState = STATE_PLAYING;   // set BEFORE spawn
+  gameState = STATE_PLAYING;
   spawnNewPiece();
 
   lastFall = millis();
