@@ -49,6 +49,7 @@ enum GameState {
   STATE_PLAYING,
   STATE_PAUSED,
   STATE_LINE_CLEAR_ANIM,
+  STATE_ENTRY_DELAY,
   STATE_GAME_OVER
 };
 
@@ -81,6 +82,8 @@ const CRGB piece_colors[] PROGMEM = {
   CRGB::Orange,
   CRGB::Cyan,
 };
+
+const uint16_t ENTRY_DELAY_TIME = 200; // ms between lock and spawn
 
 Piece curPiece;
 uint8_t curColorId;
@@ -361,15 +364,18 @@ void resetGame() {
 void lockPieceAndMaybeClear(unsigned long now) {
   writePiece(curPiece, curColorId);
 
-  // if we start a line clear anim, delay spawn until animation completes
   if (startLineClearAnimIfNeeded(now)) {
     pendingSpawn = true;
     lastFall = now;
     return;
   }
 
-  if (gameState != STATE_GAME_OVER)
-    spawnNewPiece();
+  // start new piece entry delay
+  if (gameState != STATE_GAME_OVER) {
+    gameState = STATE_ENTRY_DELAY;
+    animStart = now;
+    animDuration = ENTRY_DELAY_TIME;
+  }
 
   lastFall = now;
 }
@@ -499,9 +505,7 @@ void handleInput(unsigned long now) {
 
 void updateGameState(unsigned long now) {
   if (gameState == STATE_PLAYING) {
-
     uint16_t activeDelay = softDropActive ? SOFT_DROP_DELAY : fallDelay;
-
     if (now - lastFall >= activeDelay) {
       lastFall = now;
       stepGravity(now);
@@ -510,17 +514,22 @@ void updateGameState(unsigned long now) {
   } else if (gameState == STATE_LINE_CLEAR_ANIM) {
     if (now - animStart >= animDuration) {
       collapseClearedLines();
+
+      // apply new piece entry delay after line clear
+      gameState = STATE_ENTRY_DELAY;
+      animStart = now;
+      animDuration = ENTRY_DELAY_TIME;
+      pendingSpawn = false;
+    }
+  } else if (gameState == STATE_ENTRY_DELAY) {
+    // wait for delay to finish
+    if (now - animStart >= animDuration) {
       gameState = STATE_PLAYING;
-
-      if (pendingSpawn && gameState != STATE_GAME_OVER) {
-        pendingSpawn = false;
-        spawnNewPiece();
-      }
-
-      lastFall = now; // prevent gravity after animation
+      spawnNewPiece();
+      lastFall = now;
     }
   } else {
-    lastFall = now; // prevent gravity after paused/game over
+    lastFall = now;
   }
 }
 
@@ -597,7 +606,7 @@ void renderFrame(unsigned long now) {
   }
 
   // ghost piece
-  if (gameState == STATE_PLAYING || gameState == STATE_PAUSED) {
+  if (gameState == STATE_PLAYING) {
     Piece ghost = curPiece;
     while (!settled(ghost)) ghost.y--;
 
