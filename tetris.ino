@@ -122,6 +122,11 @@ uint8_t lastDir = 0; // 0: none, 1: left, 2: right
 const uint16_t DAS_DELAY = 180; // delay before repeat starts
 const uint16_t DAS_SPEED = 60;  // speed of repeat
 
+// lock piece grace period
+const uint16_t LOCK_DELAY = 500; // ms grace period on ground
+unsigned long lockTimer = 0;
+bool isSettled = false;
+
 // ------------------------------
 
 void refillBag() {
@@ -381,11 +386,10 @@ void lockPieceAndMaybeClear(unsigned long now) {
 }
 
 void stepGravity(unsigned long now) {
-  if (settled(curPiece)) {
-    lockPieceAndMaybeClear(now);
-    return;
+  if (!settled(curPiece)) {
+    curPiece.y--;
+    lastFall = now;
   }
-  curPiece.y--;
 }
 
 void handleInput(unsigned long now) {
@@ -440,6 +444,8 @@ void handleInput(unsigned long now) {
 
   softDropActive = controller.isHeld(NesController::Up);
 
+  bool actionTaken = false; // track if we moved/rotated (to reset lock)
+
   // hard drop
   if (controller.justPressed(NesController::Down)) {
     while (!collidesAt(curPiece, -1)) curPiece.y--;
@@ -447,68 +453,76 @@ void handleInput(unsigned long now) {
     return;
   }
 
-  Piece p = curPiece;
-
-  // rotation (use kicks)
+  // rotate piece left/right
   if (controller.justPressed(NesController::A)) {
-    tryRotate(+1);
-    return;
+    if (tryRotate(+1)) actionTaken = true;
   } else if (controller.justPressed(NesController::B)) {
-    tryRotate(-1);
-    return;
+    if (tryRotate(-1)) actionTaken = true;
   }
 
-  // lateral movement with DAS
+  // lateral movement (DAS)
   bool leftHeld = controller.isHeld(NesController::Left);
   bool rightHeld = controller.isHeld(NesController::Right);
-  uint8_t currentDir = 0;
-
-  if (leftHeld) currentDir = 1;
-  if (rightHeld) currentDir = 2;
+  uint8_t currentDir = (leftHeld) ? 1 : (rightHeld ? 2 : 0);
 
   if (currentDir != 0) {
     if (lastDir != currentDir) {
-      // initial tap
       Piece p = curPiece;
       if (currentDir == 1) p.x--; else p.x++;
-
       if (pieceInBounds(p) && !collides(p)) {
         curPiece = p;
+        actionTaken = true;
       }
-
       dasHoldTime = now;
       lastDasMove = now;
       lastDir = currentDir;
-    }
-    else if (now - dasHoldTime >= DAS_DELAY) {
-      // auto-repeat
+    } else if (now - dasHoldTime >= DAS_DELAY) {
       if (now - lastDasMove >= DAS_SPEED) {
         Piece p = curPiece;
         if (currentDir == 1) p.x--; else p.x++;
-
         if (pieceInBounds(p) && !collides(p)) {
           curPiece = p;
+          actionTaken = true;
         }
         lastDasMove = now;
       }
     }
   } else {
-    lastDir = 0; // reset when no button is held
+    lastDir = 0;
   }
 
-  // reset
-  if (controller.justPressed(NesController::Start)) {
-    resetGame();
-    return;
+  // reset the timers if we successfully moved or rotated piece
+  if (actionTaken) {
+    lockTimer = now;
   }
 }
 
 void updateGameState(unsigned long now) {
   if (gameState == STATE_PLAYING) {
+    bool currentlySettled = settled(curPiece);
+
+    // handle gravity
     uint16_t activeDelay = softDropActive ? SOFT_DROP_DELAY : fallDelay;
     if (now - lastFall >= activeDelay) {
-      lastFall = now;
       stepGravity(now);
+    }
+
+    // handle lock delay ("infinity" mechanic)
+    if (currentlySettled) {
+      // if we just landed, start timer
+      if (!isSettled) {
+        lockTimer = now;
+        isSettled = true;
+      }
+
+      // lock if we've been on the ground longer than LOCK_DELAY
+      if (now - lockTimer >= LOCK_DELAY) {
+        lockPieceAndMaybeClear(now);
+        isSettled = false; // reset for next piece
+      }
+    } else {
+      // piece is in the air, reset settled flag
+      isSettled = false;
     }
 
   } else if (gameState == STATE_LINE_CLEAR_ANIM) {
