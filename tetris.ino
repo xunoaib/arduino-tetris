@@ -1,4 +1,5 @@
 #include <Wire.h>
+#include <EEPROM.h>
 #include <FastLED.h>
 #include "NesController.h"
 #include "tetronimoes.h"
@@ -127,7 +128,24 @@ const uint16_t LOCK_DELAY = 500; // ms grace period on ground
 unsigned long lockTimer = 0;
 bool isSettled = false;
 
+uint32_t highScore = 0;
+const int EEPROM_ADDR = 0;
+
 // ------------------------------
+
+void loadHighScore() {
+  EEPROM.get(EEPROM_ADDR, highScore);
+  if (highScore == 0xFFFFFFFF) highScore = 0;
+}
+
+void updateHighScore() {
+  if (score > highScore) {
+    highScore = score;
+    EEPROM.put(EEPROM_ADDR, highScore);
+    Serial.print("New High Score: ");
+    Serial.println(highScore);
+  }
+}
 
 void refillBag() {
   for (uint8_t i = 0; i < NUM_PIECES; i++)
@@ -325,6 +343,8 @@ void spawnNewPiece() {
 
   if (collides(curPiece)) {
     gameState = STATE_GAME_OVER;
+    updateHighScore();
+
     pendingSpawn = false;
     softDropActive = false;
 
@@ -582,8 +602,17 @@ void renderFrame(unsigned long now) {
     );
 
     for (uint8_t bit = 0; bit < 32; bit++) {
+      // render high score on right
+      if (highScore & (1UL << bit)) {
+        for (uint8_t x = 5; x < 7; x++) {
+          leds[XY(x, bit)] = CRGB::Gold;
+          leds[XY(x, bit)].fadeLightBy(255 - fade);
+        }
+      }
+
+      // render current score on left
       if (score & (1UL << bit)) {
-        for (uint8_t x = 2; x < 6; x++) {
+        for (uint8_t x = 1; x < 3; x++) {
           leds[XY(x, bit)] = CRGB::White;
           leds[XY(x, bit)].fadeLightBy(255 - fade);
         }
@@ -667,6 +696,7 @@ void renderFrame(unsigned long now) {
 
 void setup() {
   Serial.begin(9600);
+  loadHighScore();
 
   FastLED.addLeds<LED_TYPE, PIN_LED_DATA, COLOR_ORDER>(leds, NUM_LEDS);
   FastLED.setMaxPowerInVoltsAndMilliamps(LED_STRIP_VOLTAGE, MAX_POWER_MILLIAMPS);
