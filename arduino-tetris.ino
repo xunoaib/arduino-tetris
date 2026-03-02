@@ -4,11 +4,10 @@
 #include "NesController.h"
 #include "tetronimoes.h"
 
+constexpr uint8_t PIN_LED_DATA = 5;
 constexpr uint8_t PIN_NES_DATA  = 6;
 constexpr uint8_t PIN_NES_LATCH = 7;
 constexpr uint8_t PIN_NES_PULSE = 8;
-
-#define PIN_LED_DATA 9
 
 #define WIDTH 8
 #define HEIGHT 32
