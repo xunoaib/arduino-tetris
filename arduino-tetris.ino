@@ -357,7 +357,6 @@ void spawnNewPiece() {
     }
 
     Serial.println("Game over!");
-    return;
   }
 
 }
@@ -667,6 +666,8 @@ void renderFrame(unsigned long now) {
   // ghost piece
   if (gameState == STATE_PLAYING) {
     Piece ghost = curPiece;
+
+    // TODO: only calculate when piece moves/changes
     while (!settled(ghost)) ghost.y--;
 
     for (int dx=0; dx<PIECE_WIDTH; dx++)
