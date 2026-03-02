@@ -165,20 +165,6 @@ uint8_t getNextPieceId() {
     refillBag();
 
   uint8_t id = pieceBag[bagIndex++];
-
-  // prevent duplicate pieces across bag boundary
-  if (id == lastPieceId) {
-
-    if (bagIndex == 1) {
-      uint8_t swapIndex = random(1, NUM_PIECES);
-      uint8_t tmp = pieceBag[0];
-      pieceBag[0] = pieceBag[swapIndex];
-      pieceBag[swapIndex] = tmp;
-
-      id = pieceBag[0];
-    }
-  }
-
   lastPieceId = id;
   return id;
 }
@@ -634,7 +620,6 @@ void renderFrame(unsigned long now) {
           } else {
             leds[XY(x, bit)] = CRGB::White;
           }
-          leds[XY(x, bit)] = CRGB::White;
           leds[XY(x, bit)].fadeLightBy(255 - fade);
         }
       }
@@ -682,8 +667,6 @@ void renderFrame(unsigned long now) {
 
           CRGB c;
           memcpy_P(&c, &piece_colors[curColorId], sizeof(CRGB));
-          leds[XY(x, y)] = c;
-
           c.fadeLightBy(205);
           leds[XY(x,y)] = c;
         }
