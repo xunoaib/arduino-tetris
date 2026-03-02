@@ -127,6 +127,10 @@ constexpr uint16_t LOCK_DELAY = 500; // ms grace period on ground
 unsigned long lockTimer = 0;
 bool isSettled = false;
 
+// limit the number of lock resets
+constexpr uint8_t MAX_LOCK_RESETS = 15;
+uint8_t lockResetCount = 0;
+
 uint32_t highScore = 0;
 constexpr int EEPROM_ADDR = 0;
 
@@ -321,6 +325,9 @@ void spawnNewPiece() {
   curPiece.id = getNextPieceId();
   curPiece.rot = 0;
 
+  lockResetCount = 0;
+  isSettled = false;
+
   uint8_t oldColorId = curColorId;
   while (curColorId == oldColorId) {
     curColorId = random(1, sizeof(piece_colors) / sizeof(piece_colors[0]));
@@ -510,8 +517,11 @@ void handleInput(unsigned long now) {
   }
 
   // reset the timers if we successfully moved or rotated piece
-  if (actionTaken) {
-    lockTimer = now;
+  if (actionTaken && settled(curPiece)) {
+    if (lockResetCount < MAX_LOCK_RESETS) {
+      lockTimer = now;
+      lockResetCount++;
+    }
   }
 }
 
