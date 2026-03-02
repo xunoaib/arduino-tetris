@@ -612,6 +612,11 @@ void renderFrame(unsigned long now) {
       // render current score on left
       if (score & (1UL << bit)) {
         for (uint8_t x = 1; x < 3; x++) {
+          if (score >= highScore) {
+            leds[XY(x, bit)] = CRGB::Green;
+          } else {
+            leds[XY(x, bit)] = CRGB::White;
+          }
           leds[XY(x, bit)] = CRGB::White;
           leds[XY(x, bit)].fadeLightBy(255 - fade);
         }
