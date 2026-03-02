@@ -404,16 +404,13 @@ void lockPieceAndMaybeClear(unsigned long now) {
   lastFall = now;
 }
 
-void stepGravity(unsigned long now) {
+bool stepGravity(unsigned long now) {
   if (!settled(curPiece)) {
     curPiece.y--;
-
-    if (softDropActive) {
-      score += 1;
-    }
-
     lastFall = now;
+    return true; // piece moved down
   }
+  return false; // piece is blocked/settled
 }
 
 void handleInput(unsigned long now) {
@@ -472,13 +469,17 @@ void handleInput(unsigned long now) {
 
   // hard drop
   if (controller.justPressed(NesController::Down)) {
-    uint8_t cellsDropped = 0;
+    int8_t startY = curPiece.y;
+
     while (!collidesAt(curPiece, -1)) {
       curPiece.y--;
-      cellsDropped++;
     }
 
-    score += (cellsDropped * 2);
+    int8_t distance = startY - curPiece.y;
+
+    if (distance > 0) {
+      score += (distance * 2);
+    }
 
     lockPieceAndMaybeClear(now);
     return;
@@ -535,7 +536,11 @@ void updateGameState(unsigned long now) {
     // handle gravity
     uint16_t activeDelay = softDropActive ? SOFT_DROP_DELAY : fallDelay;
     if (now - lastFall >= activeDelay) {
-      stepGravity(now);
+      if (stepGravity(now)) {
+        if (softDropActive) {
+          score += 1;
+        }
+      }
     }
 
     // handle lock delay ("infinity" mechanic)
