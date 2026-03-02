@@ -134,6 +134,8 @@ uint8_t lockResetCount = 0;
 uint32_t highScore = 0;
 constexpr int EEPROM_ADDR = 0;
 
+int8_t ghostY = 0; // bottommost Y for ghost piece
+
 // ------------------------------
 
 void loadHighScore() {
@@ -325,6 +327,8 @@ void spawnNewPiece() {
   curPiece.id = getNextPieceId();
   curPiece.rot = 0;
 
+  updateGhostPosition();
+
   lockResetCount = 0;
   isSettled = false;
 
@@ -479,9 +483,15 @@ void handleInput(unsigned long now) {
 
   // rotate piece left/right
   if (controller.justPressed(NesController::A)) {
-    if (tryRotate(+1)) actionTaken = true;
+    if (tryRotate(+1)) {
+      actionTaken = true;
+      updateGhostPosition();
+    }
   } else if (controller.justPressed(NesController::B)) {
-    if (tryRotate(-1)) actionTaken = true;
+    if (tryRotate(-1)) {
+      actionTaken = true;
+      updateGhostPosition();
+    }
   }
 
   // lateral movement (DAS)
@@ -496,6 +506,7 @@ void handleInput(unsigned long now) {
       if (pieceInBounds(p) && !collides(p)) {
         curPiece = p;
         actionTaken = true;
+        updateGhostPosition();
       }
       dasHoldTime = now;
       lastDasMove = now;
@@ -507,6 +518,7 @@ void handleInput(unsigned long now) {
         if (pieceInBounds(p) && !collides(p)) {
           curPiece = p;
           actionTaken = true;
+          updateGhostPosition();
         }
         lastDasMove = now;
       }
@@ -532,6 +544,7 @@ void updateGameState(unsigned long now) {
     uint16_t activeDelay = softDropActive ? SOFT_DROP_DELAY : fallDelay;
     if (now - lastFall >= activeDelay) {
       if (stepGravity(now)) {
+        updateGhostPosition();
         if (softDropActive) {
           score += 1;
         }
@@ -665,17 +678,12 @@ void renderFrame(unsigned long now) {
 
   // ghost piece
   if (gameState == STATE_PLAYING) {
-    Piece ghost = curPiece;
-
-    // TODO: only calculate when piece moves/changes
-    while (!settled(ghost)) ghost.y--;
-
     for (int dx=0; dx<PIECE_WIDTH; dx++)
       for (int dy=0; dy<PIECE_HEIGHT; dy++) {
-        int x = ghost.x + dx;
-        int y = ghost.y - dy;
-        if (inBoard(x, y) && pgm_read_byte(&tetronimo[ghost.id][ghost.rot][dy][dx])) {
+        int x = curPiece.x + dx;
+        int y = ghostY - dy;
 
+        if (inBoard(x, y) && pgm_read_byte(&tetronimo[curPiece.id][curPiece.rot][dy][dx])) {
           CRGB c;
           memcpy_P(&c, &piece_colors[curColorId], sizeof(CRGB));
           c.fadeLightBy(205);
@@ -733,4 +741,12 @@ void loop() {
   handleInput(now);
   updateGameState(now);
   renderFrame(now);
+}
+
+void updateGhostPosition() {
+  Piece ghost = curPiece;
+  while (!settled(ghost)) {
+    ghost.y--;
+  }
+  ghostY = ghost.y;
 }
