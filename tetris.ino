@@ -84,7 +84,7 @@ const CRGB piece_colors[] PROGMEM = {
   CRGB::Cyan,
 };
 
-const uint16_t ENTRY_DELAY_TIME = 200; // ms between lock and spawn
+constexpr uint16_t ENTRY_DELAY_TIME = 200; // ms between lock and spawn
 
 Piece curPiece;
 uint8_t curColorId;
@@ -103,12 +103,12 @@ bool dissolveActive = false;
 uint8_t dissolveOrder[NUM_LEDS];
 uint16_t dissolveIndex = 0;
 unsigned long dissolveLastStep = 0;
-const uint8_t dissolveStepDelay = 8; // ms between pixel wipes
+constexpr uint8_t dissolveStepDelay = 8; // ms between pixel wipes
 
 // --- final score screen ---
 bool finalScoreActive = false;
 unsigned long finalScoreStart = 0;
-const uint16_t finalScoreFadeTime = 800; // ms fade-in time
+constexpr uint16_t finalScoreFadeTime = 800; // ms fade-in time
 
 // 7 bag randomization
 constexpr uint8_t NUM_PIECES = sizeof(tetronimo) / sizeof(tetronimo[0]);
@@ -120,16 +120,16 @@ unsigned long lastDasMove = 0;
 unsigned long dasHoldTime = 0;
 uint8_t lastDir = 0; // 0: none, 1: left, 2: right
 
-const uint16_t DAS_DELAY = 180; // delay before repeat starts
-const uint16_t DAS_SPEED = 60;  // speed of repeat
+constexpr uint16_t DAS_DELAY = 180; // delay before repeat starts
+constexpr uint16_t DAS_SPEED = 60;  // speed of repeat
 
 // lock piece grace period
-const uint16_t LOCK_DELAY = 500; // ms grace period on ground
+constexpr uint16_t LOCK_DELAY = 500; // ms grace period on ground
 unsigned long lockTimer = 0;
 bool isSettled = false;
 
 uint32_t highScore = 0;
-const int EEPROM_ADDR = 0;
+constexpr int EEPROM_ADDR = 0;
 
 // ------------------------------
 
