@@ -407,6 +407,11 @@ void lockPieceAndMaybeClear(unsigned long now) {
 void stepGravity(unsigned long now) {
   if (!settled(curPiece)) {
     curPiece.y--;
+
+    if (softDropActive) {
+      score += 1;
+    }
+
     lastFall = now;
   }
 }
@@ -467,7 +472,14 @@ void handleInput(unsigned long now) {
 
   // hard drop
   if (controller.justPressed(NesController::Down)) {
-    while (!collidesAt(curPiece, -1)) curPiece.y--;
+    uint8_t cellsDropped = 0;
+    while (!collidesAt(curPiece, -1)) {
+      curPiece.y--;
+      cellsDropped++;
+    }
+
+    score += (cellsDropped * 2);
+
     lockPieceAndMaybeClear(now);
     return;
   }
