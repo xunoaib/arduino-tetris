@@ -134,6 +134,7 @@ constexpr uint8_t MAX_LOCK_RESETS = 15;
 uint8_t lockResetCount = 0;
 
 uint32_t highScore = 0;
+uint32_t previousHighScore = 0;
 constexpr int EEPROM_ADDR = 0;
 
 int8_t ghostY = 0; // bottommost Y for ghost piece
@@ -146,6 +147,7 @@ void loadHighScore() {
 }
 
 void updateHighScore() {
+  previousHighScore = highScore; // save old record for display later
   if (score > highScore) {
     highScore = score;
     EEPROM.put(EEPROM_ADDR, highScore);
@@ -658,7 +660,6 @@ void renderFrame(unsigned long now) {
 
   // --- Final Score Screen ---
   if (gameState == STATE_GAME_OVER && finalScoreActive) {
-
     FastLED.clear();
 
     uint8_t fade = map(
@@ -667,24 +668,35 @@ void renderFrame(unsigned long now) {
       0, 255
     );
 
+    // calculate blinking state (on for 1s, off for 1s)
+    bool blinkOn = (millis() / 1000) % 2;
+    bool isNewRecord = (score >= previousHighScore && score > 0);
+
     for (uint8_t bit = 0; bit < 32; bit++) {
-      // render high score on right
-      if (highScore & (1UL << bit)) {
+
+      // render high score on the right.
+      // if a new record was set, show the previous high score
+      if (previousHighScore & (1UL << bit)) {
         for (uint8_t x = 5; x < 7; x++) {
           leds[XY(x, bit)] = CRGB::Gold;
           leds[XY(x, bit)].fadeLightBy(255 - fade);
         }
       }
 
-      // render current score on left
+      // render current score on the left
       if (score & (1UL << bit)) {
         for (uint8_t x = 1; x < 3; x++) {
-          if (score >= highScore) {
-            leds[XY(x, bit)] = CRGB::Green;
-          } else {
-            leds[XY(x, bit)] = CRGB::White;
-          }
-          leds[XY(x, bit)].fadeLightBy(255 - fade);
+          CRGB scoreColor = isNewRecord ? CRGB::Green : CRGB::White;
+
+          leds[XY(x, bit)] = scoreColor;
+
+          // // blink if it's a new record
+          // if (isNewRecord && !blinkOn) {
+          //   leds[XY(x, bit)] = CRGB::Black;
+          // } else {
+          //   leds[XY(x, bit)] = scoreColor;
+          //   leds[XY(x, bit)].fadeLightBy(255 - fade);
+          // }
         }
       }
     }
@@ -778,6 +790,10 @@ void renderFrame(unsigned long now) {
 
 void setup() {
   Serial.begin(9600);
+
+  // uint32_t zeroScore = 0;
+  // EEPROM.put(0, zeroScore);
+
   loadHighScore();
 
   FastLED.addLeds<LED_TYPE, PIN_LED_DATA, COLOR_ORDER>(leds, NUM_LEDS);
