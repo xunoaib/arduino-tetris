@@ -584,7 +584,7 @@ void updateGameState(unsigned long now) {
       if (levelUpPending) {
           gameState = STATE_LEVEL_UP;
           animStart = now;
-          animDuration = 600;
+          animDuration = 150;
           levelUpPending = false;
       } else {
           gameState = STATE_ENTRY_DELAY;
