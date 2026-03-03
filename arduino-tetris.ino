@@ -50,7 +50,8 @@ enum GameState {
   STATE_PAUSED,
   STATE_LINE_CLEAR_ANIM,
   STATE_ENTRY_DELAY,
-  STATE_GAME_OVER
+  STATE_GAME_OVER,
+  STATE_LEVEL_UP
 };
 
 GameState gameState = STATE_PLAYING;
@@ -93,6 +94,7 @@ unsigned long animStart = 0;
 uint16_t animDuration = 0;
 uint8_t animData[HEIGHT];     // mask of rows being cleared
 bool pendingSpawn = false;    // spawn piece after clear animation completes
+bool levelUpPending = false;
 
 // soft drop latch for current frame
 bool softDropActive = false;
@@ -302,7 +304,12 @@ bool startLineClearAnimIfNeeded(unsigned long now) {
   }
   score += (uint32_t)base * (level + 1);
   lines_cleared += num_lines;
-  level = lines_cleared / 10;
+
+  uint8_t newLevel = lines_cleared / 10;
+  if (newLevel > level) {
+    levelUpPending = true;
+    level = newLevel;
+  }
 
   Serial.print("Level ");
   Serial.print(level);
@@ -313,6 +320,7 @@ bool startLineClearAnimIfNeeded(unsigned long now) {
 
   // arm animation
   for (int y=0; y<HEIGHT; y++) animData[y] = mask[y];
+
   gameState = STATE_LINE_CLEAR_ANIM;
   animStart = now;
   animDuration = 250; // flash time
@@ -573,11 +581,22 @@ void updateGameState(unsigned long now) {
     if (now - animStart >= animDuration) {
       collapseClearedLines();
 
-      // apply new piece entry delay after line clear
+      if (levelUpPending) {
+          gameState = STATE_LEVEL_UP;
+          animStart = now;
+          animDuration = 600;
+          levelUpPending = false;
+      } else {
+          gameState = STATE_ENTRY_DELAY;
+          animStart = now;
+          animDuration = ENTRY_DELAY_TIME;
+      }
+    }
+  } else if (gameState == STATE_LEVEL_UP) {
+    if (now - animStart >= animDuration) {
       gameState = STATE_ENTRY_DELAY;
       animStart = now;
       animDuration = ENTRY_DELAY_TIME;
-      pendingSpawn = false;
     }
   } else if (gameState == STATE_ENTRY_DELAY) {
     // wait for delay to finish
@@ -660,6 +679,23 @@ void renderFrame(unsigned long now) {
       memcpy_P(&c, &piece_colors[board[x][y]], sizeof(CRGB));
       leds[XY(x, y)] = c;
     }
+
+  if (gameState == STATE_LEVEL_UP) {
+    float progress = (float)(now - animStart) / animDuration;
+    int waveY = progress * (HEIGHT + 5);
+
+    for (int y = 0; y < HEIGHT; y++) {
+      int dist = abs(y - waveY);
+      if (dist < 4) {
+        uint8_t glow = map(dist, 0, 4, 255, 0);
+        for (int x = 0; x < WIDTH; x++) {
+          leds[XY(x, y)] += CRGB(glow, glow, glow);
+        }
+      }
+    }
+    FastLED.show();
+    return;
+  }
 
   // line clear flash overlay
   if (gameState == STATE_LINE_CLEAR_ANIM) {
