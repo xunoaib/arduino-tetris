@@ -328,24 +328,7 @@ bool startLineClearAnimIfNeeded(unsigned long now) {
   return true;
 }
 
-void spawnNewPiece() {
-  curPiece.x = (WIDTH - PIECE_WIDTH) / 2;
-  curPiece.y = (HEIGHT - 1) + (PIECE_HEIGHT - 1);
-
-  curPiece.id = getNextPieceId();
-  curPiece.rot = 0;
-
-  updateGhostPosition();
-
-  lockResetCount = 0;
-  isSettled = false;
-
-  uint8_t oldColorId = curColorId;
-  while (curColorId == oldColorId) {
-    curColorId = random(1, sizeof(piece_colors) / sizeof(piece_colors[0]));
-  }
-
-  if (collides(curPiece)) {
+void triggerGameOver() {
     gameState = STATE_GAME_OVER;
     updateHighScore();
 
@@ -369,8 +352,27 @@ void spawnNewPiece() {
     }
 
     Serial.println("Game over!");
+}
+
+void spawnNewPiece() {
+  curPiece.x = (WIDTH - PIECE_WIDTH) / 2;
+  curPiece.y = (HEIGHT - 1) + (PIECE_HEIGHT - 1);
+  curPiece.id = getNextPieceId();
+  curPiece.rot = 0;
+
+  updateGhostPosition();
+  lockResetCount = 0;
+  isSettled = false;
+
+  uint8_t oldColorId = curColorId;
+  while (curColorId == oldColorId) {
+    curColorId = random(1, sizeof(piece_colors) / sizeof(piece_colors[0]));
   }
 
+  // if spawn position is already blocked, game over
+  if (collides(curPiece)) {
+    triggerGameOver();
+  }
 }
 
 void resetGame() {
@@ -390,7 +392,28 @@ void resetGame() {
 }
 
 void lockPieceAndMaybeClear(unsigned long now) {
+  // check if the piece is locking above the visible board
+  bool lockedAboveBoard = false;
+  for (int dx = 0; dx < PIECE_WIDTH; dx++) {
+    for (int dy = 0; dy < PIECE_HEIGHT; dy++) {
+      if (pgm_read_byte(&tetronimo[curPiece.id][curPiece.rot][dy][dx])) {
+        int y = curPiece.y - dy;
+        // if any part of the piece is above the board, we "top out"
+        if (y >= HEIGHT) {
+          lockedAboveBoard = true;
+        }
+      }
+    }
+  }
+
+  // commit the piece to the board
   writePiece(curPiece, curColorId);
+
+  // if piece locked too high, trigger game over
+  if (lockedAboveBoard) {
+    triggerGameOver();
+    return;
+  }
 
   if (startLineClearAnimIfNeeded(now)) {
     pendingSpawn = true;
