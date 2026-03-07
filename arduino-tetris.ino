@@ -70,7 +70,7 @@ const uint16_t levelSpeeds[] PROGMEM = {
    40,  40,  40,  40,  40,  40,  40,  40,  40,  35
 };
 
-uint8_t board[WIDTH][HEIGHT];
+uint8_t board[(WIDTH * HEIGHT) / 2];
 CRGB leds[NUM_LEDS];
 
 const CRGB piece_colors[] PROGMEM = {
@@ -141,6 +141,32 @@ int8_t ghostY = 0; // bottommost Y for ghost piece
 
 // ------------------------------
 
+void setBoard(uint8_t x, uint8_t y, uint8_t val) {
+  if (x >= WIDTH || y >= HEIGHT) return;
+
+  uint16_t index = (y * WIDTH + x);
+  uint16_t byteIdx = index / 2;
+
+  if (index % 2 == 0) {
+    board[byteIdx] = (board[byteIdx] & 0x0F) | (val << 4);
+  } else {
+    board[byteIdx] = (board[byteIdx] & 0xF0) | (val & 0x0F);
+  }
+}
+
+uint8_t getBoard(uint8_t x, uint8_t y) {
+  if (x >= WIDTH || y >= HEIGHT) return EMPTY;
+
+  uint16_t index = (y * WIDTH + x);
+  uint16_t byteIdx = index / 2;
+
+  if (index % 2 == 0) {
+    return (board[byteIdx] >> 4);
+  } else {
+    return (board[byteIdx] & 0x0F);
+  }
+}
+
 void loadHighScore() {
   EEPROM.get(EEPROM_ADDR, highScore);
   if (highScore == 0xFFFFFFFF) highScore = 0;
@@ -192,13 +218,13 @@ bool inPlayfield(int x, int y) {
 }
 
 inline bool cellOccupied(int x, int y) {
-  return inBoard(x, y) && board[x][y] != EMPTY;
+  return inBoard(x, y) && getBoard(x, y) != EMPTY;
 }
 
 void clearBoard() {
   for (int x=0; x<WIDTH; x++)
     for (int y=0; y<HEIGHT; y++)
-      board[x][y] = EMPTY;
+      setBoard(x, y, EMPTY);
 }
 
 void updateFallDelay() {
@@ -255,7 +281,7 @@ void writePiece(Piece p, uint8_t value) {
         int x = p.x + dx;
         int y = p.y - dy;
         if (inBoard(x, y))
-          board[x][y] = value;
+          setBoard(x, y, value);
       }
 }
 
@@ -264,7 +290,7 @@ int detectFullLines(uint8_t outMask[HEIGHT]) {
   for (int y=0; y<HEIGHT; y++) {
     bool full = true;
     for (int x=0; x<WIDTH; x++) {
-      if (board[x][y] == EMPTY) { full = false; break; }
+      if (getBoard(x, y) == EMPTY) { full = false; break; }
     }
     outMask[y] = full ? 1 : 0;
     if (full) num++;
@@ -281,10 +307,10 @@ void collapseClearedLines() {
 
     for (int yy = y; yy < HEIGHT - 1; yy++)
       for (int x = 0; x < WIDTH; x++)
-        board[x][yy] = board[x][yy + 1];
+        setBoard(x, yy, getBoard(x, yy + 1));
 
     for (int x = 0; x < WIDTH; x++)
-      board[x][HEIGHT - 1] = EMPTY;
+      setBoard(x, HEIGHT - 1, EMPTY);
 
     for (int yy = y; yy < HEIGHT - 1; yy++)
       animData[yy] = animData[yy + 1];
@@ -711,7 +737,7 @@ void renderFrame(unsigned long now) {
   for (int y=0; y<HEIGHT; y++)
     for (int x=0; x<WIDTH; x++) {
       CRGB c;
-      memcpy_P(&c, &piece_colors[board[x][y]], sizeof(CRGB));
+      memcpy_P(&c, &piece_colors[getBoard(x, y)], sizeof(CRGB));
       leds[XY(x, y)] = c;
     }
 
