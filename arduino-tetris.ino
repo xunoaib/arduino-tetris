@@ -101,8 +101,8 @@ bool softDropActive = false;
 
 // --- game over dissolve ---
 bool dissolveActive = false;
-uint8_t dissolveOrder[NUM_LEDS];
 uint16_t dissolveIndex = 0;
+uint16_t lcgState = 0;
 unsigned long dissolveLastStep = 0;
 constexpr uint8_t dissolveStepDelay = 8; // ms between pixel wipes
 
@@ -368,16 +368,7 @@ void triggerGameOver() {
     dissolveIndex = 0;
     dissolveLastStep = millis();
 
-    // build shuffled list of indices
-    for (uint16_t i = 0; i < NUM_LEDS; i++)
-      dissolveOrder[i] = i;
-
-    for (uint16_t i = 0; i < NUM_LEDS; i++) {
-      uint16_t j = random(NUM_LEDS);
-      uint16_t tmp = dissolveOrder[i];
-      dissolveOrder[i] = dissolveOrder[j];
-      dissolveOrder[j] = tmp;
-    }
+    lcgState = random(NUM_LEDS);
 
     Serial.println("Game over!");
 }
@@ -669,14 +660,13 @@ void renderFrame(unsigned long now) {
       dissolveLastStep = millis();
 
       if (dissolveIndex < NUM_LEDS) {
-        leds[dissolveOrder[dissolveIndex]] = CRGB::Black;
+        leds[lcgState] = CRGB::Black;
+        lcgState = (uint16_t)(lcgState * 5 + 1) % NUM_LEDS;
         dissolveIndex++;
       } else {
-          dissolveActive = false;
-
-          // start final score screen
-          finalScoreActive = true;
-          finalScoreStart = millis();
+        dissolveActive = false;
+        finalScoreActive = true;
+        finalScoreStart = millis();
       }
     }
 
