@@ -5,12 +5,14 @@
 #include "tetronimoes.h"
 
 constexpr uint8_t PIN_LED_DATA = 5;
-constexpr uint8_t PIN_NES_DATA  = 6;
+constexpr uint8_t PIN_NES_DATA = 6;
 constexpr uint8_t PIN_NES_LATCH = 7;
 constexpr uint8_t PIN_NES_PULSE = 8;
 
 #define WIDTH 8
 #define HEIGHT 32
+#define PLAY_HEIGHT 28
+#define PREVIEW_HEIGHT 4
 
 #define LED_TYPE WS2812B
 #define COLOR_ORDER GRB
@@ -22,6 +24,9 @@ constexpr uint8_t PIN_NES_PULSE = 8;
 #define EMPTY 0
 
 #define SOFT_DROP_DELAY 33
+
+uint8_t nextPieceId;
+uint8_t nextColorId;
 
 struct Kick { int8_t dx, dy; };
 
@@ -92,7 +97,7 @@ uint8_t lastPieceId = 255;
 
 unsigned long animStart = 0;
 uint16_t animDuration = 0;
-uint8_t animData[HEIGHT];     // mask of rows being cleared
+uint8_t animData[HEIGHT] = {0};     // mask of rows being cleared
 bool pendingSpawn = false;    // spawn piece after clear animation completes
 bool levelUpPending = false;
 
@@ -210,7 +215,7 @@ constexpr uint16_t XY(uint8_t x, uint8_t y) {
 }
 
 inline bool inBoard(int x, int y) {
-  return x >= 0 && x < WIDTH && y >= 0 && y < HEIGHT;
+  return x >= 0 && x < WIDTH && y >= 0 && y < PLAY_HEIGHT;
 }
 
 bool inPlayfield(int x, int y) {
@@ -287,7 +292,7 @@ void writePiece(Piece p, uint8_t value) {
 
 int detectFullLines(uint8_t outMask[HEIGHT]) {
   int num = 0;
-  for (int y=0; y<HEIGHT; y++) {
+  for (int y=0; y<PLAY_HEIGHT; y++) {
     bool full = true;
     for (int x=0; x<WIDTH; x++) {
       if (getBoard(x, y) == EMPTY) { full = false; break; }
@@ -299,22 +304,22 @@ int detectFullLines(uint8_t outMask[HEIGHT]) {
 }
 
 void collapseClearedLines() {
-  for (int y = 0; y < HEIGHT; ) {
+  for (int y = 0; y < PLAY_HEIGHT; ) {
     if (!animData[y]) {
       y++;
       continue;
     }
 
-    for (int yy = y; yy < HEIGHT - 1; yy++)
+    for (int yy = y; yy < PLAY_HEIGHT - 1; yy++)
       for (int x = 0; x < WIDTH; x++)
         setBoard(x, yy, getBoard(x, yy + 1));
 
     for (int x = 0; x < WIDTH; x++)
-      setBoard(x, HEIGHT - 1, EMPTY);
+      setBoard(x, PLAY_HEIGHT - 1, EMPTY);
 
-    for (int yy = y; yy < HEIGHT - 1; yy++)
+    for (int yy = y; yy < PLAY_HEIGHT - 1; yy++)
       animData[yy] = animData[yy + 1];
-    animData[HEIGHT - 1] = 0;
+    animData[PLAY_HEIGHT - 1] = 0;
   }
 }
 
@@ -375,20 +380,23 @@ void triggerGameOver() {
 
 void spawnNewPiece() {
   curPiece.x = (WIDTH - PIECE_WIDTH) / 2;
-  curPiece.y = (HEIGHT - 1) + (PIECE_HEIGHT - 1);
-  curPiece.id = getNextPieceId();
+  curPiece.y = PLAY_HEIGHT - 1;
   curPiece.rot = 0;
+  curPiece.id = nextPieceId;
+
+  nextPieceId = getNextPieceId();
+
+  uint8_t oldColorId = curColorId;
+  while (curColorId == oldColorId) {
+    curColorId = random(1, 8);
+  }
+
+  nextColorId = random(1, 8);
 
   updateGhostPosition();
   lockResetCount = 0;
   isSettled = false;
 
-  uint8_t oldColorId = curColorId;
-  while (curColorId == oldColorId) {
-    curColorId = random(1, sizeof(piece_colors) / sizeof(piece_colors[0]));
-  }
-
-  // if spawn position is already blocked, game over
   if (collides(curPiece)) {
     triggerGameOver();
   }
@@ -398,6 +406,7 @@ void resetGame() {
   level = 0;
   score = 0;
   lines_cleared = 0;
+
   pendingSpawn = false;
   softDropActive = false;
 
@@ -405,6 +414,8 @@ void resetGame() {
   updateFallDelay();
 
   gameState = STATE_PLAYING;
+
+  nextPieceId = getNextPieceId();
   spawnNewPiece();
 
   lastFall = millis();
@@ -724,12 +735,28 @@ void renderFrame(unsigned long now) {
   FastLED.clear();
 
   // render base board
-  for (int y=0; y<HEIGHT; y++)
+  for (int y=0; y<PLAY_HEIGHT; y++)
     for (int x=0; x<WIDTH; x++) {
       CRGB c;
       memcpy_P(&c, &piece_colors[getBoard(x, y)], sizeof(CRGB));
       leds[XY(x, y)] = c;
     }
+
+  // separator line
+  for (int x=0; x < WIDTH; x++) {
+    leds[XY(x, PLAY_HEIGHT)] = CRGB(30, 30, 30);
+  }
+
+  // piece preview
+  for (int dx=0; dx < PIECE_WIDTH; dx++) {
+    for (int dy=0; dy < PIECE_HEIGHT; dy++) {
+      if (pgm_read_byte(&tetronimo[nextPieceId][0][dy][dx])) {
+        int x = 2 + dx;
+        int y = (HEIGHT - 1) - dy;
+        leds[XY(x, y)] = CRGB::White;
+      }
+    }
+  }
 
   if (gameState == STATE_LEVEL_UP) {
     float progress = (float)(now - animStart) / animDuration;
@@ -751,7 +778,7 @@ void renderFrame(unsigned long now) {
   // line clear flash overlay
   if (gameState == STATE_LINE_CLEAR_ANIM) {
     bool flash = ((now - animStart) / 50) % 2;
-    for (int y=0; y<HEIGHT; y++) {
+    for (int y=0; y<PLAY_HEIGHT; y++) {
       if (animData[y]) {
         for (int x=0; x<WIDTH; x++) {
           leds[XY(x,y)] = flash ? CRGB::White : CRGB::Black;
@@ -763,33 +790,32 @@ void renderFrame(unsigned long now) {
     return;
   }
 
-  // ghost piece
+  // render ghost piece
   if (gameState == STATE_PLAYING) {
-    for (int dx=0; dx<PIECE_WIDTH; dx++)
+    for (int dx=0; dx<PIECE_WIDTH; dx++) {
       for (int dy=0; dy<PIECE_HEIGHT; dy++) {
         int x = curPiece.x + dx;
         int y = ghostY - dy;
-
         if (inBoard(x, y) && pgm_read_byte(&tetronimo[curPiece.id][curPiece.rot][dy][dx])) {
           CRGB c;
           memcpy_P(&c, &piece_colors[curColorId], sizeof(CRGB));
-          c.fadeLightBy(205);
-          leds[XY(x,y)] = c;
+          leds[XY(x,y)] = c.fadeToBlackBy(200);
         }
       }
+    }
 
-    // current piece
-    for (int dx=0; dx<PIECE_WIDTH; dx++)
-      for (int dy=0; dy<PIECE_HEIGHT; dy++)
-        if (pgm_read_byte(&tetronimo[curPiece.id][curPiece.rot][dy][dx])) {
-          int x = curPiece.x + dx;
-          int y = curPiece.y - dy;
-          if (inBoard(x, y)) {
-            CRGB c;
-            memcpy_P(&c, &piece_colors[curColorId], sizeof(CRGB));
-            leds[XY(x, y)] = c;
-          }
+    // render current piece
+    for (int dx=0; dx<PIECE_WIDTH; dx++) {
+      for (int dy=0; dy<PIECE_HEIGHT; dy++) {
+        int x = curPiece.x + dx;
+        int y = curPiece.y - dy;
+        if (inBoard(x, y) && pgm_read_byte(&tetronimo[curPiece.id][curPiece.rot][dy][dx])) {
+          CRGB c;
+          memcpy_P(&c, &piece_colors[curColorId], sizeof(CRGB));
+          leds[XY(x, y)] = c;
         }
+      }
+    }
   }
 
   // pause fade-to-black
