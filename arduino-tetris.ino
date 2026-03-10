@@ -380,7 +380,7 @@ void triggerGameOver() {
 
 void spawnNewPiece() {
   curPiece.x = (WIDTH - PIECE_WIDTH) / 2;
-  curPiece.y = PLAY_HEIGHT - 1;
+  curPiece.y = PLAY_HEIGHT + 2;
   curPiece.rot = 0;
   curPiece.id = nextPieceId;
 
