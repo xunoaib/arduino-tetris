@@ -1,10 +1,18 @@
 # Arduino Tetris
 
-- Arduino
+- Arduino (Nano, Uno, or similar)
 - 8x32 LED Matrix (WS2812B)
 - NES Controller
 
-# NES Controller Wiring
+# Data Pins
+
+| Component | Pin |
+| :--- | :--- |
+| LED Data | D5 |
+| NES Data | D6 |
+| NES Latch | D7 |
+| NES Pulse | D8 |
+
 
 [NES Controller Reference](https://web.archive.org/web/20160301181841/http://www.mit.edu/~tarvizo/nes-controller.html)
 
