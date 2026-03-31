@@ -138,6 +138,11 @@ bool isSettled = false;
 constexpr uint8_t MAX_LOCK_RESETS = 15;
 uint8_t lockResetCount = 0;
 
+// --- timer ---
+uint32_t remainingTimeMs = 0;
+unsigned long lastTimerUpdate = 0;
+constexpr uint32_t GAME_DURATION_MS = 60000;
+
 uint32_t highScore = 0;
 uint32_t previousHighScore = 0;
 constexpr int EEPROM_ADDR = 0;
@@ -410,6 +415,9 @@ void resetGame() {
   pendingSpawn = false;
   softDropActive = false;
 
+  remainingTimeMs = GAME_DURATION_MS;
+  lastTimerUpdate = millis();
+
   clearBoard();
   updateFallDelay();
 
@@ -598,6 +606,17 @@ void handleInput(unsigned long now) {
 }
 
 void updateGameState(unsigned long now) {
+  if (gameState != STATE_PAUSED && gameState != STATE_GAME_OVER) {
+    uint32_t dt = now - lastTimerUpdate;
+    if (dt >= remainingTimeMs) {
+      remainingTimeMs = 0;
+      triggerGameOver();
+    } else {
+      remainingTimeMs -= dt;
+    }
+  }
+  lastTimerUpdate = now;
+
   if (gameState == STATE_PLAYING) {
     bool currentlySettled = settled(curPiece);
 
@@ -742,9 +761,14 @@ void renderFrame(unsigned long now) {
       leds[XY(x, y)] = c;
     }
 
-  // separator line
+  // separator line (timer)
+  uint8_t timerWidth = (remainingTimeMs * WIDTH) / GAME_DURATION_MS;
   for (int x=0; x < WIDTH; x++) {
-    leds[XY(x, PLAY_HEIGHT)] = CRGB(30, 30, 30);
+    if (x < timerWidth) {
+      leds[XY(x, PLAY_HEIGHT)] = CRGB(0, 100, 0); // Green for remaining time
+    } else {
+      leds[XY(x, PLAY_HEIGHT)] = CRGB(30, 0, 0);   // Dim red for elapsed time
+    }
   }
 
   // piece preview
