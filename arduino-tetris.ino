@@ -141,7 +141,7 @@ uint8_t lockResetCount = 0;
 // --- timer ---
 uint32_t remainingTimeMs = 0;
 unsigned long lastTimerUpdate = 0;
-constexpr uint32_t GAME_DURATION_MS = 60000;
+constexpr uint32_t GAME_DURATION_MS = 180000;
 
 uint32_t highScore = 0;
 uint32_t previousHighScore = 0;
