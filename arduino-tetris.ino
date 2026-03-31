@@ -141,7 +141,7 @@ uint8_t lockResetCount = 0;
 // --- timer ---
 uint32_t remainingTimeMs = 0;
 unsigned long lastTimerUpdate = 0;
-constexpr uint32_t GAME_DURATION_MS = 180000;
+constexpr uint32_t GAME_DURATION_MS = 120000;
 
 uint32_t highScore = 0;
 uint32_t previousHighScore = 0;
@@ -857,6 +857,7 @@ void renderFrame(unsigned long now) {
 void setup() {
   Serial.begin(9600);
 
+  // uint32 ensures 32 bits are written
   // uint32_t zeroScore = 0;
   // EEPROM.put(0, zeroScore);
 
